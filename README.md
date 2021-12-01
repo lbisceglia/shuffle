@@ -1,7 +1,7 @@
 # 99 Card Game &#127145;&#127161;
 
 ## Gameplay
-99 is a turn-based, multiplayer card game. Players area each dealt three cards. As the play goes around, each player puts down one card, adding its total to the running total. If the running total exceeds 99, the round is over and the player who forced the total over 99 is given a strike. Three strikes, you're out! Last player standing wins.
+99 is a turn-based, multiplayer card game. Players are each dealt three cards. As the play goes around, each player puts down one card, adding its total to the running total. If the running total exceeds 99, the round is over and the player who forced the total over 99 is given a strike. Three strikes, you're out! Last player standing wins.
 
 The point total starts at zero and each card adds its face value in points (e.g. a 5 is worth five points, a face card is worth 10 points) except for certain cards that have special values or meanings:
 * 4 reverses play (and is worth 0 points)
