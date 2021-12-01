@@ -2,9 +2,12 @@ package main
 
 import (
 	"shuffle/models"
+	"shuffle/utils"
 )
 
-// TODO: unit testing
+func init() {
+	utils.Randomize()
+}
 
 // Main initializes a single round of 99 with 4 players.
 // The current implementation is a simple proof of concept.
