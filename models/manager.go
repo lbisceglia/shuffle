@@ -258,7 +258,7 @@ func (mgr *NNGameManager) EndGame() {
 
 // AdvanceCurrPlayer advances play to the next player in the circle, according to the direction of play.
 func (mgr *NNGameManager) AdvanceCurrPlayer() {
-	if curr, err := utils.Mod(mgr.currPlayer+mgr.direction, len(mgr.players)); err != nil {
+	if curr, err := utils.Mod(mgr.currPlayer+mgr.direction, len(mgr.players)); err == nil {
 		mgr.currPlayer = curr
 	} else {
 		mgr.currPlayer = 0
