@@ -4,85 +4,94 @@ import (
 	"testing"
 )
 
-// TODO: setup and takedown functions
-
 type IntUnaryOpResult struct {
-	name     string
-	x        int
-	expected int
+	x    int
+	want int
 }
 
 type IntBinaryOpResult struct {
-	x        int
-	y        int
-	expected int
+	x    int
+	y    int
+	want int
 }
 
-var absTests = []IntUnaryOpResult{
-	{"neg", -1, 1},
-	{"zero", 0, 0},
-	{"pos", 1, 1},
-}
-
-var minTests = []IntBinaryOpResult{
-	{1, 2, 1},
-	{5, 5, 5},
-	{0, -1, -1},
-}
-
-var maxTests = []IntBinaryOpResult{
-	{1, 2, 2},
-	{5, 5, 5},
-	{0, -1, 0},
-}
-
-var modTests = []IntBinaryOpResult{
-	{9, 0, -1},
-	{4, 5, 4},
-	{-4, -5, 4},
-	{-4, 5, 1},
-	{4, -5, 1},
-	{5, 5, 0},
-	{-5, -5, 0},
-	{-5, 5, 0},
-	{5, -5, 0},
-	{6, 5, 1},
-	{-6, -5, 1},
-	{-6, 5, 4},
-	{6, -5, 4},
-}
-
-func TestAbs(t *testing.T) {
-	for _, test := range absTests {
-		result := Abs(test.x)
-		if result != test.expected {
-			t.Errorf("Expected value %d not given\n", test.expected)
-		}
+func evaluate(t *testing.T, got int, want int) {
+	if got != want {
+		t.Fatalf("ans = %d; want %d\n", got, want)
 	}
 }
 
-func testBinaryOp(t *testing.T, tests []IntBinaryOpResult, f func(int, int) int) {
-	for _, test := range tests {
-		result := f(test.x, test.y)
-		if result != test.expected {
-			t.Errorf("Expected value %d not given\n", test.expected)
-		}
+func TestAbs(t *testing.T) {
+	tests := map[string]IntUnaryOpResult{
+		"neg":  {-1, 1},
+		"zero": {0, 0},
+		"pos":  {1, 1},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			evaluate(t, Abs(test.x), test.want)
+		})
+	}
+}
+
+func testBinaryOp(t *testing.T, tests map[string]IntBinaryOpResult, f func(int, int) int) {
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			evaluate(t, f(test.x, test.y), test.want)
+		})
 	}
 }
 
 func TestMin(t *testing.T) {
-	testBinaryOp(t, minTests, Min)
+	tests := map[string]IntBinaryOpResult{
+		"less":    {1, 2, 1},
+		"equal":   {5, 5, 5},
+		"greater": {0, -1, -1},
+	}
+
+	testBinaryOp(t, tests, Min)
 }
 
 func TestMax(t *testing.T) {
-	testBinaryOp(t, maxTests, Max)
+	tests := map[string]IntBinaryOpResult{
+		"less":    {1, 2, 2},
+		"equal":   {5, 5, 5},
+		"greater": {0, -1, 0},
+	}
+
+	testBinaryOp(t, tests, Max)
 }
 
 func TestMod(t *testing.T) {
-	for _, test := range modTests {
-		result, err := Mod(test.x, test.y)
-		if result != test.expected || result < 0 && err == nil {
-			t.Errorf("Expected value %d not given\n", test.expected)
-		}
+	tests := map[string]IntBinaryOpResult{
+		"pos by zero":            {9, 0, -1},
+		"neg by zero":            {-9, 0, -1},
+		"zero by zero":           {0, 0, -1},
+		"zero by pos":            {0, 5, 0},
+		"zero by neg":            {0, -5, 0},
+		"zero by any":            {0, -5, 0},
+		"pos small by pos large": {4, 5, 4},
+		"neg small by neg large": {-4, -5, 4},
+		"neg small by pos large": {-4, 5, 1},
+		"pos small by neg large": {4, -5, 1},
+		"pos by pos self":        {5, 5, 0},
+		"neg by neg self":        {-5, -5, 0},
+		"neg by pos self":        {-5, 5, 0},
+		"pos by neg self":        {5, -5, 0},
+		"pos large by pos small": {6, 5, 1},
+		"neg large by neg small": {-6, -5, 1},
+		"neg large by pos small": {-6, 5, 4},
+		"pos large by neg small": {6, -5, 4},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := Mod(test.x, test.y)
+			want := test.want
+			if got != want || got < 0 && err == nil {
+				t.Fatalf("ans = %d; want %d\n", got, want)
+			}
+		})
 	}
 }
