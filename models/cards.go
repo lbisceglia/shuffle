@@ -76,6 +76,7 @@ type card struct {
 	suit suit
 }
 
+// NewCard constructs a card with the given rank and suit.
 func NewCard(r rank, s suit) card {
 	return card{
 		rank: r,

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"os"
 	"shuffle/utils"
 	"testing"
@@ -13,9 +14,12 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	utils.SetRandomSeed(2021)
 	code := m.Run()
 	os.Exit(code)
+}
+
+func teardownRandomSubtest() {
+	utils.Reset()
 }
 
 type CardStringResult struct {
@@ -58,17 +62,18 @@ type ShoeResult struct {
 	expectedRanks  int
 }
 
-var newShoeTests = []ShoeResult{
-	{-1, 0, 0, 0},
-	{0, 0, 0, 0},
-	{1, cardsPerDeck, suitsPerDeck, ranksPerDeck},
-	{2, 2 * cardsPerDeck, suitsPerDeck, ranksPerDeck},
-	{3, 3 * cardsPerDeck, suitsPerDeck, ranksPerDeck},
-}
-
 func TestNewShoe(t *testing.T) {
-	for _, test := range newShoeTests {
-		testShoe(t, NewShoe(test.decks), test)
+	newShoeTests := map[string]ShoeResult{
+		"neg":           {-1, 0, 0, 0},
+		"zero":          {0, 0, 0, 0},
+		"one deck":      {1, cardsPerDeck, suitsPerDeck, ranksPerDeck},
+		"six card shoe": {6, 6 * cardsPerDeck, suitsPerDeck, ranksPerDeck},
+	}
+
+	for name, test := range newShoeTests {
+		t.Run(name, func(t *testing.T) {
+			testShoe(t, NewShoe(test.decks), test)
+		})
 	}
 }
 
@@ -83,89 +88,92 @@ func testShoe(t *testing.T, s shoe, test ShoeResult) {
 		counter++
 	}
 
-	if counter != test.expectedLength {
-		t.Errorf("Expected %v cards in the shoe, not %v\n", test.expectedLength, counter)
+	if got, want := counter, test.expectedLength; got != want {
+		t.Errorf("got %v cards in the shoe; want %v\n", got, want)
 	}
 
-	if len(suits) != test.expectedSuits {
-		t.Errorf("Expected %v suits in the shoe, not %v\n", test.expectedSuits, len(suits))
+	if got, want := len(suits), test.expectedSuits; got != want {
+		t.Errorf("got %v suits in the shoe; want %v\n", got, want)
 	}
 
-	expectedCardsPerSuit := test.decks * test.expectedRanks
-	for _, v := range suits {
-		if v != expectedCardsPerSuit {
-			t.Errorf("Expected %v cards per suit, not %v\n", expectedCardsPerSuit, v)
+	if got, want := len(ranks), test.expectedRanks; got != want {
+		t.Errorf("got %v ranks in the shoe; want %v\n", got, want)
+	}
+
+	cardsPerSuit := test.decks * test.expectedRanks
+	for suit, got := range suits {
+		if want := cardsPerSuit; got != want {
+			t.Errorf("got %v %v; want %v\n", got, suit, want)
 		}
 	}
 
-	if len(ranks) != test.expectedRanks {
-		t.Errorf("Expected %v ranks in the shoe, not %v\n", ranksPerDeck, len(ranks))
-	}
-
-	expectedCardsPerRank := test.decks * test.expectedSuits
-	for _, v := range ranks {
-		if v != expectedCardsPerRank {
-			t.Errorf("Expected %v cards per rank, not %v\n", expectedCardsPerRank, v)
+	cardsPerRank := test.decks * test.expectedSuits
+	for rank, got := range ranks {
+		if want := cardsPerRank; got != want {
+			t.Errorf("got %v %v; want %v\n", got, rank, want)
 		}
 	}
-}
-
-var shuffleTest = shoe{
-	NewCard(Jack, Spades),
-	NewCard(Five, Hearts),
-	NewCard(Eight, Diamonds),
-	NewCard(Ten, Spades),
-	NewCard(Nine, Spades),
-	NewCard(Five, Spades),
-	NewCard(King, Hearts),
-	NewCard(Ace, Diamonds),
-	NewCard(Ten, Diamonds),
-	NewCard(Three, Diamonds),
-	NewCard(Queen, Clubs),
-	NewCard(Two, Spades),
-	NewCard(Jack, Diamonds),
-	NewCard(Queen, Hearts),
-	NewCard(Seven, Clubs),
-	NewCard(Seven, Spades),
-	NewCard(Queen, Diamonds),
-	NewCard(Five, Diamonds),
-	NewCard(Three, Spades),
-	NewCard(Nine, Clubs),
-	NewCard(King, Clubs),
-	NewCard(Three, Clubs),
-	NewCard(Eight, Hearts),
-	NewCard(Four, Hearts),
-	NewCard(Ace, Hearts),
-	NewCard(Six, Clubs),
-	NewCard(Ace, Clubs),
-	NewCard(Six, Diamonds),
-	NewCard(Eight, Spades),
-	NewCard(Seven, Diamonds),
-	NewCard(Two, Clubs),
-	NewCard(Queen, Spades),
-	NewCard(Four, Spades),
-	NewCard(King, Spades),
-	NewCard(Five, Clubs),
-	NewCard(Six, Spades),
-	NewCard(Three, Hearts),
-	NewCard(Eight, Clubs),
-	NewCard(King, Diamonds),
-	NewCard(Ten, Hearts),
-	NewCard(Two, Diamonds),
-	NewCard(Jack, Clubs),
-	NewCard(Nine, Hearts),
-	NewCard(Ten, Clubs),
-	NewCard(Two, Hearts),
-	NewCard(Nine, Diamonds),
-	NewCard(Ace, Spades),
-	NewCard(Seven, Hearts),
-	NewCard(Six, Hearts),
-	NewCard(Jack, Hearts),
-	NewCard(Four, Diamonds),
-	NewCard(Four, Clubs),
 }
 
 func TestShuffle(t *testing.T) {
+	utils.SetRandomSeed(2021)
+	defer teardownRandomSubtest()
+
+	test := shoe{
+		NewCard(Jack, Spades),
+		NewCard(Five, Hearts),
+		NewCard(Eight, Diamonds),
+		NewCard(Ten, Spades),
+		NewCard(Nine, Spades),
+		NewCard(Five, Spades),
+		NewCard(King, Hearts),
+		NewCard(Ace, Diamonds),
+		NewCard(Ten, Diamonds),
+		NewCard(Three, Diamonds),
+		NewCard(Queen, Clubs),
+		NewCard(Two, Spades),
+		NewCard(Jack, Diamonds),
+		NewCard(Queen, Hearts),
+		NewCard(Seven, Clubs),
+		NewCard(Seven, Spades),
+		NewCard(Queen, Diamonds),
+		NewCard(Five, Diamonds),
+		NewCard(Three, Spades),
+		NewCard(Nine, Clubs),
+		NewCard(King, Clubs),
+		NewCard(Three, Clubs),
+		NewCard(Eight, Hearts),
+		NewCard(Four, Hearts),
+		NewCard(Ace, Hearts),
+		NewCard(Six, Clubs),
+		NewCard(Ace, Clubs),
+		NewCard(Six, Diamonds),
+		NewCard(Eight, Spades),
+		NewCard(Seven, Diamonds),
+		NewCard(Two, Clubs),
+		NewCard(Queen, Spades),
+		NewCard(Four, Spades),
+		NewCard(King, Spades),
+		NewCard(Five, Clubs),
+		NewCard(Six, Spades),
+		NewCard(Three, Hearts),
+		NewCard(Eight, Clubs),
+		NewCard(King, Diamonds),
+		NewCard(Ten, Hearts),
+		NewCard(Two, Diamonds),
+		NewCard(Jack, Clubs),
+		NewCard(Nine, Hearts),
+		NewCard(Ten, Clubs),
+		NewCard(Two, Hearts),
+		NewCard(Nine, Diamonds),
+		NewCard(Ace, Spades),
+		NewCard(Seven, Hearts),
+		NewCard(Six, Hearts),
+		NewCard(Jack, Hearts),
+		NewCard(Four, Diamonds),
+		NewCard(Four, Clubs),
+	}
+
 	deck := NewShoe(1)
 	deck.shuffle()
 
@@ -173,8 +181,10 @@ func TestShuffle(t *testing.T) {
 	testShoe(t, deck, deckResult)
 
 	for i, card := range deck {
-		if got, want := card, shuffleTest[i]; got != want {
-			t.Errorf("card = %v; want %v", got, want)
-		}
+		t.Run(fmt.Sprintf("card %v", i), func(t *testing.T) {
+			if got, want := card, test[i]; got != want {
+				t.Fatalf("got %v; want %v", got, want)
+			}
+		})
 	}
 }

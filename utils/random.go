@@ -41,7 +41,7 @@ func SetRandomSeed(seed int64) {
 
 // Testing Helpers
 
-// reset allows SetRandomSeed to be called with fresh values.
-func reset() {
+// Reset allows SetRandomSeed to be called with fresh values.
+func Reset() {
 	once = sync.Once{}
 }

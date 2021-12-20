@@ -22,8 +22,8 @@ type RandomSeedResult struct {
 
 var p = message.NewPrinter(language.English)
 
-func teardownSubtest() {
-	reset()
+func teardownRandomSubtest() {
+	Reset()
 }
 
 func TestMain(m *testing.M) {
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 func TestSetRandomSeed(t *testing.T) {
 	tests := map[string][]RandomSeedResult{
 		"positive seed": {
-			{SEED, 2},
+			{SEED, 1},
 			{READ, 5577006791947779410},
 			{READ, 8674665223082153551},
 			{READ, 6129484611666145821},
@@ -91,9 +91,8 @@ func TestSetRandomSeed(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			defer func() {
-				teardownSubtest()
-			}()
+			defer teardownRandomSubtest()
+
 			for _, action := range test {
 				switch action.method {
 				case SEED:
@@ -135,7 +134,7 @@ func TestRandomize(t *testing.T) {
 		if err := recover(); err != nil {
 			t.Errorf("the code panicked")
 		}
-		teardownSubtest()
+		teardownRandomSubtest()
 	}()
 	Randomize()
 }
