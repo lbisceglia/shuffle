@@ -23,6 +23,13 @@ type dealer struct {
 	discard shoe
 }
 
+// NewDealer constructs a new dealer with the given number of decks, unshuffled.
+func NewDealer(numDecks int) *dealer {
+	d := new(dealer)
+	d.initializeDeck(numDecks)
+	return d
+}
+
 // Shuffle randomly shuffles the draw pile.
 func (d *dealer) Shuffle() {
 	d.draw.shuffle()
@@ -65,9 +72,14 @@ func (d *dealer) HandleDiscard(cards []card) {
 
 // InitializeDeck creates a new multi-deck Shoe and shuffles it.
 func (d *dealer) InitializeDeck(numDecks int) {
+	d.initializeDeck(numDecks)
+	d.Shuffle()
+}
+
+// initializeDeck creates a new, unshuffled multi-deck Shoe.
+func (d *dealer) initializeDeck(numDecks int) {
 	d.draw = NewShoe(numDecks)
 	d.discard = NewShoe(0)
-	d.Shuffle()
 }
 
 // Debugging Helper Methods
