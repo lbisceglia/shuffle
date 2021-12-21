@@ -29,29 +29,33 @@ type CardStringResult struct {
 	expectedCard string
 }
 
-var cardStringTests = []CardStringResult{
-	{NewCard(Ten, Clubs), "10", "♣", "10♣"},
-	{NewCard(Jack, Diamonds), "J", "♦", "J♦"},
-	{NewCard(Queen, Hearts), "Q", "♥", "Q♥"},
-	{NewCard(King, Spades), "K", "♠", "K♠"},
-	{NewCard(Ace, "elephants"), "A", "invalid suit", "A, invalid suit"},
-	{NewCard("14", Spades), "invalid rank", "♠", "invalid rank, ♠"},
-	{NewCard("14", "elephants"), "invalid rank", "invalid suit", "invalid rank, invalid suit"},
+func evaluate(t *testing.T, got interface{}, want interface{}, context ...string) {
+	if got != want {
+		if len(context) == 0 {
+			t.Fatalf("got %v; want %v\n", got, want)
+		} else {
+			t.Fatalf("got %v %s; want %v\n", got, context[0], want)
+		}
+	}
 }
 
 func TestCardString(t *testing.T) {
-	for _, test := range cardStringTests {
-		if got := test.card.rank.String(); got != test.expectedRank {
-			t.Errorf("rank = %v; want %v", got, test.expectedRank)
-		}
+	var tests = map[string]CardStringResult{
+		"value card; club":      {NewCard(Ten, Clubs), "10", "♣", "10♣"},
+		"jack; diamond":         {NewCard(Jack, Diamonds), "J", "♦", "J♦"},
+		"queen; heart":          {NewCard(Queen, Hearts), "Q", "♥", "Q♥"},
+		"king; spade":           {NewCard(King, Spades), "K", "♠", "K♠"},
+		"ace; invalid suit":     {NewCard(Ace, "elephants"), "A", "invalid suit", "A, invalid suit"},
+		"invalid rank":          {NewCard("14", Spades), "invalid rank", "♠", "invalid rank, ♠"},
+		"invalid rank and suit": {NewCard("14", "elephants"), "invalid rank", "invalid suit", "invalid rank, invalid suit"},
+	}
 
-		if got := test.card.suit.String(); got != test.expectedSuit {
-			t.Errorf("suit = %v; want %v", got, test.expectedSuit)
-		}
-
-		if got := test.card.String(); got != test.expectedCard {
-			t.Errorf("card = %v; want %v", got, test.expectedCard)
-		}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			evaluate(t, test.card.rank.String(), test.expectedRank)
+			evaluate(t, test.card.suit.String(), test.expectedSuit)
+			evaluate(t, test.card.String(), test.expectedCard)
+		})
 	}
 }
 
@@ -88,30 +92,18 @@ func testShoe(t *testing.T, s shoe, test ShoeResult) {
 		counter++
 	}
 
-	if got, want := counter, test.expectedLength; got != want {
-		t.Errorf("got %v cards in the shoe; want %v\n", got, want)
-	}
-
-	if got, want := len(suits), test.expectedSuits; got != want {
-		t.Errorf("got %v suits in the shoe; want %v\n", got, want)
-	}
-
-	if got, want := len(ranks), test.expectedRanks; got != want {
-		t.Errorf("got %v ranks in the shoe; want %v\n", got, want)
-	}
+	evaluate(t, counter, test.expectedLength, "cards in the shoe")
+	evaluate(t, len(suits), test.expectedSuits, "suits in the shoe")
+	evaluate(t, len(ranks), test.expectedRanks, "ranks in the shoe")
 
 	cardsPerSuit := test.decks * test.expectedRanks
 	for suit, got := range suits {
-		if want := cardsPerSuit; got != want {
-			t.Errorf("got %v %v; want %v\n", got, suit, want)
-		}
+		evaluate(t, got, cardsPerSuit, suit.String())
 	}
 
 	cardsPerRank := test.decks * test.expectedSuits
 	for rank, got := range ranks {
-		if want := cardsPerRank; got != want {
-			t.Errorf("got %v %v; want %v\n", got, rank, want)
-		}
+		evaluate(t, got, cardsPerRank, rank.String())
 	}
 }
 
@@ -182,9 +174,7 @@ func TestShuffle(t *testing.T) {
 
 	for i, card := range deck {
 		t.Run(fmt.Sprintf("card %v", i), func(t *testing.T) {
-			if got, want := card, test[i]; got != want {
-				t.Fatalf("got %v; want %v", got, want)
-			}
+			evaluate(t, card, test[i])
 		})
 	}
 }
