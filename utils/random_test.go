@@ -2,7 +2,6 @@ package utils
 
 import (
 	"math/rand"
-	"os"
 	"testing"
 
 	"golang.org/x/text/language"
@@ -21,15 +20,6 @@ type RandomSeedResult struct {
 }
 
 var p = message.NewPrinter(language.English)
-
-func teardownRandomSubtest() {
-	Reset()
-}
-
-func TestMain(m *testing.M) {
-	code := m.Run()
-	os.Exit(code)
-}
 
 func TestSetRandomSeed(t *testing.T) {
 	tests := map[string][]RandomSeedResult{
@@ -91,7 +81,7 @@ func TestSetRandomSeed(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			defer teardownRandomSubtest()
+			defer TeardownRandomSubtest()
 
 			for _, action := range test {
 				switch action.method {
@@ -134,7 +124,7 @@ func TestRandomize(t *testing.T) {
 		if err := recover(); err != nil {
 			t.Errorf("the code panicked")
 		}
-		teardownRandomSubtest()
+		TeardownRandomSubtest()
 	}()
 	Randomize()
 }

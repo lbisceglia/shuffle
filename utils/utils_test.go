@@ -15,12 +15,6 @@ type IntBinaryOpResult struct {
 	want int
 }
 
-func evaluate(t *testing.T, got int, want int) {
-	if got != want {
-		t.Fatalf("ans = %d; want %d\n", got, want)
-	}
-}
-
 func TestAbs(t *testing.T) {
 	tests := map[string]IntUnaryOpResult{
 		"neg":  {-1, 1},
@@ -30,7 +24,7 @@ func TestAbs(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			evaluate(t, Abs(test.x), test.want)
+			Evaluate(t, Abs(test.x), test.want)
 		})
 	}
 }
@@ -38,7 +32,7 @@ func TestAbs(t *testing.T) {
 func testBinaryOp(t *testing.T, tests map[string]IntBinaryOpResult, f func(int, int) int) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			evaluate(t, f(test.x, test.y), test.want)
+			Evaluate(t, f(test.x, test.y), test.want)
 		})
 	}
 }

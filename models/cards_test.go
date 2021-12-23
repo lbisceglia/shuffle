@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"os"
 	"shuffle/utils"
 	"testing"
 )
@@ -13,13 +12,59 @@ const (
 	cardsPerDeck = 52
 )
 
-func TestMain(m *testing.M) {
-	code := m.Run()
-	os.Exit(code)
-}
-
-func teardownRandomSubtest() {
-	utils.Reset()
+var standardDeck = shoe{
+	NewCard(Ace, Clubs),
+	NewCard(Two, Clubs),
+	NewCard(Three, Clubs),
+	NewCard(Four, Clubs),
+	NewCard(Five, Clubs),
+	NewCard(Six, Clubs),
+	NewCard(Seven, Clubs),
+	NewCard(Eight, Clubs),
+	NewCard(Nine, Clubs),
+	NewCard(Ten, Clubs),
+	NewCard(Jack, Clubs),
+	NewCard(Queen, Clubs),
+	NewCard(King, Clubs),
+	NewCard(Ace, Diamonds),
+	NewCard(Two, Diamonds),
+	NewCard(Three, Diamonds),
+	NewCard(Four, Diamonds),
+	NewCard(Five, Diamonds),
+	NewCard(Six, Diamonds),
+	NewCard(Seven, Diamonds),
+	NewCard(Eight, Diamonds),
+	NewCard(Nine, Diamonds),
+	NewCard(Ten, Diamonds),
+	NewCard(Jack, Diamonds),
+	NewCard(Queen, Diamonds),
+	NewCard(King, Diamonds),
+	NewCard(Ace, Hearts),
+	NewCard(Two, Hearts),
+	NewCard(Three, Hearts),
+	NewCard(Four, Hearts),
+	NewCard(Five, Hearts),
+	NewCard(Six, Hearts),
+	NewCard(Seven, Hearts),
+	NewCard(Eight, Hearts),
+	NewCard(Nine, Hearts),
+	NewCard(Ten, Hearts),
+	NewCard(Jack, Hearts),
+	NewCard(Queen, Hearts),
+	NewCard(King, Hearts),
+	NewCard(Ace, Spades),
+	NewCard(Two, Spades),
+	NewCard(Three, Spades),
+	NewCard(Four, Spades),
+	NewCard(Five, Spades),
+	NewCard(Six, Spades),
+	NewCard(Seven, Spades),
+	NewCard(Eight, Spades),
+	NewCard(Nine, Spades),
+	NewCard(Ten, Spades),
+	NewCard(Jack, Spades),
+	NewCard(Queen, Spades),
+	NewCard(King, Spades),
 }
 
 type CardStringResult struct {
@@ -27,16 +72,6 @@ type CardStringResult struct {
 	expectedRank string
 	expectedSuit string
 	expectedCard string
-}
-
-func evaluate(t *testing.T, got interface{}, want interface{}, context ...string) {
-	if got != want {
-		if len(context) == 0 {
-			t.Fatalf("got %v; want %v\n", got, want)
-		} else {
-			t.Fatalf("got %v %s; want %v\n", got, context[0], want)
-		}
-	}
 }
 
 func TestCardString(t *testing.T) {
@@ -52,9 +87,9 @@ func TestCardString(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			evaluate(t, test.card.rank.String(), test.expectedRank)
-			evaluate(t, test.card.suit.String(), test.expectedSuit)
-			evaluate(t, test.card.String(), test.expectedCard)
+			utils.Evaluate(t, test.card.rank.String(), test.expectedRank)
+			utils.Evaluate(t, test.card.suit.String(), test.expectedSuit)
+			utils.Evaluate(t, test.card.String(), test.expectedCard)
 		})
 	}
 }
@@ -92,24 +127,24 @@ func testShoe(t *testing.T, s shoe, test ShoeResult) {
 		counter++
 	}
 
-	evaluate(t, counter, test.expectedLength, "cards in the shoe")
-	evaluate(t, len(suits), test.expectedSuits, "suits in the shoe")
-	evaluate(t, len(ranks), test.expectedRanks, "ranks in the shoe")
+	utils.Evaluate(t, counter, test.expectedLength, "cards in the shoe")
+	utils.Evaluate(t, len(suits), test.expectedSuits, "suits in the shoe")
+	utils.Evaluate(t, len(ranks), test.expectedRanks, "ranks in the shoe")
 
 	cardsPerSuit := test.decks * test.expectedRanks
 	for suit, got := range suits {
-		evaluate(t, got, cardsPerSuit, suit.String())
+		utils.Evaluate(t, got, cardsPerSuit, suit.String())
 	}
 
 	cardsPerRank := test.decks * test.expectedSuits
 	for rank, got := range ranks {
-		evaluate(t, got, cardsPerRank, rank.String())
+		utils.Evaluate(t, got, cardsPerRank, rank.String())
 	}
 }
 
 func TestShuffle(t *testing.T) {
 	utils.SetRandomSeed(2021)
-	defer teardownRandomSubtest()
+	defer utils.TeardownRandomSubtest()
 
 	test := shoe{
 		NewCard(Jack, Spades),
@@ -174,7 +209,7 @@ func TestShuffle(t *testing.T) {
 
 	for i, card := range deck {
 		t.Run(fmt.Sprintf("card %v", i), func(t *testing.T) {
-			evaluate(t, card, test[i])
+			utils.Evaluate(t, card, test[i])
 		})
 	}
 }

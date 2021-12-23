@@ -4,10 +4,10 @@ import (
 	"shuffle/utils"
 )
 
-// IDealer is an interface for entities that perform actions on Shoes.
+// Dealer is an interface for entities that perform actions on Shoes.
 // Actions include reording Cards, adding Cards to, and removing Cards from Shoes.
-type IDealer interface {
-	InitializeShoe()
+type Dealer interface {
+	ReplaceShoe(numDecks int)
 	Shuffle()
 	DealHand(size int)
 	HandleDiscard(cards []card)
@@ -23,10 +23,13 @@ type dealer struct {
 	discard shoe
 }
 
-// NewDealer constructs a new dealer with the given number of decks, unshuffled.
-func NewDealer(numDecks int) *dealer {
+// NewDealer constructs a new dealer with the given number of decks, shuffled by default.
+func NewDealer(numDecks int, shuffle ...bool) *dealer {
 	d := new(dealer)
-	d.initializeDeck(numDecks)
+	d.replaceShoe(numDecks)
+	if len(shuffle) == 0 || shuffle[0] {
+		d.Shuffle()
+	}
 	return d
 }
 
@@ -59,7 +62,7 @@ func (d *dealer) DealHand(size int) hand {
 	return hand
 }
 
-// Reshuffle shuffles the discard pile and sets it as the draw pile.
+// reshuffle shuffles the discard pile and sets it as the draw pile.
 func (d *dealer) reshuffle() {
 	d.draw, d.discard = d.discard, NewShoe(0)
 	d.Shuffle()
@@ -70,16 +73,17 @@ func (d *dealer) HandleDiscard(cards []card) {
 	d.discard = append(d.discard, cards...)
 }
 
-// InitializeDeck creates a new multi-deck Shoe and shuffles it.
-func (d *dealer) InitializeDeck(numDecks int) {
-	d.initializeDeck(numDecks)
+// ReplaceShoe creates a new multi-deck Shoe and shuffles it.
+func (d *dealer) ReplaceShoe(numDecks int) {
+	d.replaceShoe(numDecks)
 	d.Shuffle()
 }
 
-// initializeDeck creates a new, unshuffled multi-deck Shoe.
-func (d *dealer) initializeDeck(numDecks int) {
+// replaceShoe creates a new multi-deck Shoe.
+func (d *dealer) replaceShoe(numDecks int) {
 	d.draw = NewShoe(numDecks)
 	d.discard = NewShoe(0)
+	d.drawIdx = 0
 }
 
 // Debugging Helper Methods

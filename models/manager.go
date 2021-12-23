@@ -47,10 +47,10 @@ var NNDefaultSettings = &NNGameSettings{
 	},
 }
 
-// IGameManager is an interface for entities that specify and enforce the rules of a specific game.
+// GameManager is an interface for entities that specify and enforce the rules of a specific game.
 // It contains the logic for starting and ending games, maintains the order of play,
 // validates player moves, and shifts cards between players and dealers.
-type IGameManager interface {
+type GameManager interface {
 	NewGame()
 	StartGame(humans []*NNPlayer, robots int, settings *NNGameSettings)
 	Deal()
@@ -146,7 +146,7 @@ func (mgr *NNGameManager) setSettings(settings *NNGameSettings) {
 func (mgr *NNGameManager) Deal() {
 	set := mgr.settings
 	decks := MinDecks(set.CardsPerPlayer, set.WildCards, len(mgr.players))
-	mgr.dealer.InitializeDeck(decks)
+	mgr.dealer.ReplaceShoe(decks)
 	for _, stat := range mgr.players {
 		hand := mgr.dealer.DealHand(set.CardsPerPlayer)
 		stat.player.ReplaceHand(hand)
