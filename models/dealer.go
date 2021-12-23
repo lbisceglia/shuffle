@@ -1,8 +1,6 @@
 package models
 
-import (
-	"shuffle/utils"
-)
+import "shuffle/utils"
 
 // Dealer is an interface for entities that perform actions on Shoes.
 // Actions include reording Cards, adding Cards to, and removing Cards from Shoes.
@@ -13,7 +11,7 @@ type Dealer interface {
 	HandleDiscard(cards []card)
 }
 
-// dealer is an implementation of IDealer.
+// dealer is an implementation of Dealer.
 // It maintains a draw pile and discard pile.
 // If the draw pile is exhausted during a deal, the dealer will automatically reshuffle
 // the discard pile and draw from it.
@@ -44,19 +42,20 @@ func (d *dealer) Shuffle() {
 // the discard pile and draw from it.
 func (d *dealer) DealHand(size int) hand {
 	// Calculate the size of the hand
-	sz := utils.Min(size, len(d.discard)+(len(d.draw)-d.drawIdx))
+	sz := utils.Min(size, d.drawSize()+d.discardSize())
 	hand := make(hand, sz)
-	if len(d.draw) == 0 {
-		d.reshuffle()
-	}
-	if len(d.draw) > 0 {
+	if sz > 0 {
 		end := utils.Min(len(d.draw), d.drawIdx+sz)
 		copied := copy(hand, d.draw[d.drawIdx:end])
 		d.drawIdx += copied
-		if copied < sz {
+		if d.drawEmpty() {
 			d.reshuffle()
+		}
+		if copied < sz {
 			copy(hand[copied:], d.DealHand(sz-copied))
-			d.drawIdx = sz - copied
+		}
+		if d.drawEmpty() {
+			d.reshuffle()
 		}
 	}
 	return hand
@@ -84,6 +83,21 @@ func (d *dealer) replaceShoe(numDecks int) {
 	d.draw = NewShoe(numDecks)
 	d.discard = NewShoe(0)
 	d.drawIdx = 0
+}
+
+// drawSize returns the size of the draw pile.
+func (d dealer) drawSize() int {
+	return len(d.draw) - d.drawIdx
+}
+
+// drawSize returns the size of the draw pile.
+func (d dealer) discardSize() int {
+	return len(d.discard)
+}
+
+// drawEmpty returns true if the draw pile is empty, false otherwise.
+func (d dealer) drawEmpty() bool {
+	return len(d.draw) == d.drawIdx
 }
 
 // Debugging Helper Methods

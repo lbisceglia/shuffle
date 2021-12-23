@@ -6,90 +6,138 @@ import (
 	"testing"
 )
 
+const (
+	DRAW    = "draw"
+	DISCARD = "discard"
+)
+
 type HandResult struct {
-	name               string
-	cardsRequested     int
-	cardsExpected      int
-	drawCardsRemaining int
-	handExpected       hand
+	name                string
+	method              string
+	cardsRequested      int
+	cardsTransferred    int
+	drawExpectedSize    int
+	discardExpectedSize int
+	handTransferred     hand
+}
+
+type DealerResult struct {
+	numCards int
+	shuffle  bool
+	draw     shoe
 }
 
 func TestDealHand(t *testing.T) {
-	utils.SetRandomSeed(2021)
-	defer utils.TeardownRandomSubtest()
-
-	tests := []HandResult{
-		{"empty request", 0, 0, 52, hand{}},
-		{"empty idempotent", 0, 0, 52, hand{}},
-		{"single request, full fill", 1, 1, 51, hand{NewCard(Jack, Spades)}},
-		{"large request, full fill", 50, 50, 1, hand{
-			NewCard(Five, Hearts),
-			NewCard(Eight, Diamonds),
-			NewCard(Ten, Spades),
-			NewCard(Nine, Spades),
-			NewCard(Five, Spades),
-			NewCard(King, Hearts),
-			NewCard(Ace, Diamonds),
-			NewCard(Ten, Diamonds),
-			NewCard(Three, Diamonds),
-			NewCard(Queen, Clubs),
-			NewCard(Two, Spades),
-			NewCard(Jack, Diamonds),
-			NewCard(Queen, Hearts),
-			NewCard(Seven, Clubs),
-			NewCard(Seven, Spades),
-			NewCard(Queen, Diamonds),
-			NewCard(Five, Diamonds),
-			NewCard(Three, Spades),
-			NewCard(Nine, Clubs),
-			NewCard(King, Clubs),
-			NewCard(Three, Clubs),
-			NewCard(Eight, Hearts),
-			NewCard(Four, Hearts),
-			NewCard(Ace, Hearts),
-			NewCard(Six, Clubs),
-			NewCard(Ace, Clubs),
-			NewCard(Six, Diamonds),
-			NewCard(Eight, Spades),
-			NewCard(Seven, Diamonds),
-			NewCard(Two, Clubs),
-			NewCard(Queen, Spades),
-			NewCard(Four, Spades),
-			NewCard(King, Spades),
-			NewCard(Five, Clubs),
-			NewCard(Six, Spades),
-			NewCard(Three, Hearts),
-			NewCard(Eight, Clubs),
-			NewCard(King, Diamonds),
-			NewCard(Ten, Hearts),
-			NewCard(Two, Diamonds),
-			NewCard(Jack, Clubs),
-			NewCard(Nine, Hearts),
-			NewCard(Ten, Clubs),
-			NewCard(Two, Hearts),
-			NewCard(Nine, Diamonds),
-			NewCard(Ace, Spades),
-			NewCard(Seven, Hearts),
-			NewCard(Six, Hearts),
-			NewCard(Jack, Hearts),
-			NewCard(Four, Diamonds),
-		}},
-		{"large request, partial fill", 5, 1, 0, hand{NewCard(Four, Clubs)}},
-		{"single request, empty fill", 1, 0, 0, hand{}},
-		{"large request, empty fill", 6, 0, 0, hand{}},
+	reshuffled := shoe{
+		NewCard(Seven, Diamonds),
+		NewCard(Nine, Spades),
+		NewCard(Eight, Clubs),
+		NewCard(Jack, Diamonds),
+		NewCard(Three, Spades),
+		NewCard(Ten, Spades),
+		NewCard(Six, Clubs),
+		NewCard(Two, Diamonds),
+		NewCard(Seven, Spades),
+		NewCard(King, Hearts),
+		NewCard(Ten, Clubs),
+		NewCard(Nine, Hearts),
+		NewCard(Eight, Hearts),
+		NewCard(Eight, Diamonds),
+		NewCard(Queen, Clubs),
+		NewCard(Ten, Hearts),
+		NewCard(Ace, Diamonds),
+		NewCard(Five, Diamonds),
+		NewCard(Six, Spades),
+		NewCard(Ten, Diamonds),
+		NewCard(Jack, Clubs),
+		NewCard(Five, Spades),
+		NewCard(Two, Hearts),
+		NewCard(Four, Spades),
+		NewCard(Ace, Spades),
+		NewCard(Three, Clubs),
+		NewCard(Nine, Diamonds),
+		NewCard(Jack, Spades),
+		NewCard(Ace, Hearts),
+		NewCard(Jack, Hearts),
+		NewCard(Nine, Clubs),
+		NewCard(Six, Hearts),
+		NewCard(Six, Diamonds),
+		NewCard(Four, Clubs),
+		NewCard(King, Diamonds),
+		NewCard(Queen, Hearts),
+		NewCard(King, Clubs),
+		NewCard(Five, Hearts),
+		NewCard(Queen, Spades),
+		NewCard(Seven, Hearts),
+		NewCard(Ace, Clubs),
+		NewCard(Three, Diamonds),
+		NewCard(Four, Diamonds),
+		NewCard(Queen, Diamonds),
+		NewCard(King, Spades),
+		NewCard(Five, Clubs),
+		NewCard(Eight, Spades),
+		NewCard(Three, Hearts),
+		NewCard(Two, Spades),
+		NewCard(Four, Hearts),
+		NewCard(Seven, Clubs),
+		NewCard(Two, Clubs),
 	}
 
-	d := NewDealer(1, false)
-	d.Shuffle()
+	tests := map[string][]HandResult{
+		"no reshuffle": {
+			{"empty request", DRAW, 0, 0, 52, 0, hand{}},
+			{"empty idempotent", DRAW, 0, 0, 52, 0, hand{}},
+			{"single request, full fill", DRAW, 1, 1, 51, 0, hand(shuffled2021Deck[:1])},
+			{"large request, full fill", DRAW, 50, 50, 1, 0, hand(shuffled2021Deck[1:51])},
+			{"large request, partial fill", DRAW, 17, 1, 0, 0, hand(shuffled2021Deck[51:])},
+			{"single request, empty fill", DRAW, 1, 0, 0, 0, hand{}},
+			{"large request, empty fill", DRAW, 17, 0, 0, 0, hand{}},
+		},
+		"reshuffle after exhaustion": {
+			{"large request, full fill", DRAW, 52, 52, 0, 0, hand(shuffled2021Deck)},
+			{"replenish", DISCARD, 0, 52, 0, 52, hand(shuffled2021Deck)},
+			{"full fill, after reshuffle", DRAW, 20, 20, 32, 0, hand(reshuffled[:20])},
+		},
+		"reshuffle during draw, full fill": {
+			{"large request, full fill", DRAW, 51, 51, 1, 0, hand(shuffled2021Deck[:51])},
+			{"replenish", DISCARD, 0, 2, 1, 2, hand{NewCard(Jack, Spades), NewCard(Five, Hearts)}},
+			{"full fill with intermittent reshuffle", DRAW, 2, 2, 1, 0, hand{NewCard(Four, Clubs), NewCard(Jack, Spades)}},
+		},
+		"reshuffle during draw, partial fill": {
+			{"large request, full fill", DRAW, 51, 51, 1, 0, hand(shuffled2021Deck[:51])},
+			{"replenish", DISCARD, 0, 2, 1, 2, hand{NewCard(Jack, Spades), NewCard(Five, Hearts)}},
+			{"partial fill with intermittent reshuffle", DRAW, 4, 3, 0, 0, hand{NewCard(Four, Clubs), NewCard(Jack, Spades), NewCard(Five, Hearts)}},
+		},
+	}
 
-	for i, handResult := range tests {
-		hand := d.DealHand(handResult.cardsRequested)
-		t.Run(handResult.name, func(t *testing.T) {
-			utils.Evaluate(t, len(hand), handResult.cardsExpected, "cards dealt")
-			utils.Evaluate(t, len(d.drawPile()), handResult.drawCardsRemaining, "draw cards remaining")
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			utils.SetRandomSeed(2021)
+			defer utils.TeardownRandomSubtest()
 
-			for j, card := range hand {
-				utils.Evaluate(t, card, handResult.handExpected[j], fmt.Sprintf("(card %v, hand %v)", i, j))
+			d := NewDealer(1)
+
+			for _, handResult := range test {
+				switch handResult.method {
+				case DRAW:
+					t.Run(handResult.name, func(t *testing.T) {
+						hand := d.DealHand(handResult.cardsRequested)
+						utils.Evaluate(t, len(hand), handResult.cardsTransferred, "cards dealt")
+						utils.Evaluate(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
+						utils.Evaluate(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
+					})
+				case DISCARD:
+					t.Run(handResult.name, func(t *testing.T) {
+						before := d.drawSize() + d.discardSize()
+						d.HandleDiscard(handResult.handTransferred)
+						after := d.drawSize() + d.discardSize()
+						utils.Evaluate(t, after-before, handResult.cardsTransferred, "cards transferred to dealer")
+						utils.Evaluate(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
+						utils.Evaluate(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
+					})
+				default:
+					t.Fatalf("invalid dealer action attempt")
+				}
 			}
 		})
 	}
@@ -116,60 +164,7 @@ func TestReplaceShoe(t *testing.T) {
 
 	utils.Evaluate(t, len(draw), 52-SIZE)
 
-	test := shoe{
-		NewCard(Jack, Spades),
-		NewCard(Five, Hearts),
-		NewCard(Eight, Diamonds),
-		NewCard(Ten, Spades),
-		NewCard(Nine, Spades),
-		NewCard(Five, Spades),
-		NewCard(King, Hearts),
-		NewCard(Ace, Diamonds),
-		NewCard(Ten, Diamonds),
-		NewCard(Three, Diamonds),
-		NewCard(Queen, Clubs),
-		NewCard(Two, Spades),
-		NewCard(Jack, Diamonds),
-		NewCard(Queen, Hearts),
-		NewCard(Seven, Clubs),
-		NewCard(Seven, Spades),
-		NewCard(Queen, Diamonds),
-		NewCard(Five, Diamonds),
-		NewCard(Three, Spades),
-		NewCard(Nine, Clubs),
-		NewCard(King, Clubs),
-		NewCard(Three, Clubs),
-		NewCard(Eight, Hearts),
-		NewCard(Four, Hearts),
-		NewCard(Ace, Hearts),
-		NewCard(Six, Clubs),
-		NewCard(Ace, Clubs),
-		NewCard(Six, Diamonds),
-		NewCard(Eight, Spades),
-		NewCard(Seven, Diamonds),
-		NewCard(Two, Clubs),
-		NewCard(Queen, Spades),
-		NewCard(Four, Spades),
-		NewCard(King, Spades),
-		NewCard(Five, Clubs),
-		NewCard(Six, Spades),
-		NewCard(Three, Hearts),
-		NewCard(Eight, Clubs),
-		NewCard(King, Diamonds),
-		NewCard(Ten, Hearts),
-		NewCard(Two, Diamonds),
-		NewCard(Jack, Clubs),
-		NewCard(Nine, Hearts),
-		NewCard(Ten, Clubs),
-		NewCard(Two, Hearts),
-		NewCard(Nine, Diamonds),
-		NewCard(Ace, Spades),
-		NewCard(Seven, Hearts),
-		NewCard(Six, Hearts),
-		NewCard(Jack, Hearts),
-		NewCard(Four, Diamonds),
-		NewCard(Four, Clubs),
-	}
+	test := shuffled2021Deck
 
 	d.ReplaceShoe(1)
 	draw = d.drawPile()
@@ -182,7 +177,26 @@ func TestReplaceShoe(t *testing.T) {
 	}
 }
 
-// TODO: TestNewDealer
-// TODO: TestHandleDiscard
-// TODO: TestDealHandWithReshuffle
-// TODO: TestReshuffle
+func TestNewDealer(t *testing.T) {
+	tests := map[string]DealerResult{
+		"unshuffled, single":   {1, false, standardDeck},
+		"unshuffled, multiple": {2, false, append(standardDeck, standardDeck...)},
+		"shuffled, single":     {1, true, shuffled2021Deck},
+		"shuffled, multiple":   {2, true, shuffled2021Shoe},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			utils.SetRandomSeed(2021)
+			defer utils.TeardownRandomSubtest()
+			d := NewDealer(test.numCards, test.shuffle)
+			for i, card := range d.drawPile() {
+				utils.Evaluate(t, card, test.draw[i])
+			}
+		})
+	}
+}
+
+func TestHandleDiscard(t *testing.T) {
+	// TODO
+}

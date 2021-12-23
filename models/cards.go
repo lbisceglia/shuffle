@@ -173,3 +173,51 @@ func revealPile(name string, s shoe) {
 	fmt.Printf("%s pile: %d cards\n", name, len(s))
 	fmt.Println(s)
 }
+
+// longString displays a rank in long form.
+func (r rank) longString() string {
+	switch r {
+	case Ace:
+		return "Ace"
+	case Two:
+		return "Two"
+	case Three:
+		return "Three"
+	case Four:
+		return "Four"
+	case Five:
+		return "Five"
+	case Six:
+		return "Six"
+	case Seven:
+		return "Seven"
+	case Eight:
+		return "Eight"
+	case Nine:
+		return "Nine"
+	case Ten:
+		return "Ten"
+	case Jack:
+		return "Jack"
+	case Queen:
+		return "Queen"
+	case King:
+		return "King"
+	default:
+		return "invalid rank"
+	}
+}
+
+// longString displays a suit in long form.
+func (s suit) longString() string {
+	return string(s)
+}
+
+// produceCode creates the initialization code for a collection of cards.
+func produceCode(cards []card) {
+	fmt.Printf("{\n")
+	for _, card := range cards {
+		fmt.Printf("\tNewCard(%v, %v),\n", card.rank.longString(), card.suit.longString())
+	}
+	fmt.Printf("}\n")
+}
