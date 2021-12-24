@@ -214,7 +214,9 @@ func (mgr *NNGameManager) DeclareLoser(p *NNPlayer) {
 
 // ScoreCard determines the effect of the card on the count.
 func (mgr NNGameManager) ScoreCard(c card) (toAdd int, err error) {
-	return mgr.ScoreRank(c.rank)
+	toAdd, err = mgr.ScoreRank(c.rank)
+	mgr.reverseIfNeeded(c)
+	return
 }
 
 // ScoreRank determines the effect of the rank on the count.
