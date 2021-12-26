@@ -1,7 +1,7 @@
 # 99 Card Game &#127145;&#127161;
 
 ## Gameplay
-99 is a turn-based, multiplayer card game. Players area each dealt three cards. As the play goes around, each player puts down one card, adding its total to the running total. If the running total exceeds 99, the round is over and the player who forced the total over 99 is given a strike. Three strikes, you're out! Last player standing wins.
+99 is a turn-based, multiplayer card game. Players are each dealt three cards. As the play goes around, each player puts down one card, adding its total to the running total. If the running total exceeds 99, the round is over and the player who forced the total over 99 is given a strike. Three strikes, you're out! Last player standing wins.
 
 The point total starts at zero and each card adds its face value in points (e.g. a 5 is worth five points, a face card is worth 10 points) except for certain cards that have special values or meanings:
 * 4 reverses play (and is worth 0 points)
@@ -29,8 +29,6 @@ Future improvements will enable true multiplayer games with multiple clients. Th
 * Using WebSockets (or similar) to keep players updated on the running count
 
 ## Inspiration
-This game is a family favourite that has become a Christmas day tradition. After a hearty Christmas dinner at Nonna's house, we butt the folding tables up, cobble together every last deck of cards we can scrounge, throw in five dollars apiece, and gather round for an epic forty-person 99 showdown. With 120 rounds ahead of us, we buckle up for a thrilling game that lasts all night and crowns one champion, pausing only for reloads of wine, taralli, salami, and cheese. 
+This game is a family favourite that has become a Christmas day tradition. After a hearty Christmas dinner at Nonna's house, we push the tables end-to-end, cobble together every last deck of cards we can scrounge, throw in five dollars apiece, and gather round for an epic forty-person 99 showdown. With 120 rounds ahead of us, we buckle up for a thrilling game that lasts all night and crowns one champion, pausing only for reloads of wine, taralli, salami, and cheese. There only one question left...
 
-No, not that cheese, the hard one. No, that's not the one I meant, that's parmigiano, that's good too, though... Cut some of that up... but I meant asiago, is there any left? No, that's provolone altogether, it should be on the right side of the fridge, like near the back. That's where she keeps it. She didn't freeze it, did she!? No, I swear to God, I saw it earlier. I just saw it, you gotta bend down to see it, though, it's like *right* at the back. *Right* at the back. You find it!? Wait, let's see... YES, yes, *that* one. Ok! *Now* we're ready to play. There's only one more question...
-
-Who's gonna shuffle? 
+Who's gonna shuffle?

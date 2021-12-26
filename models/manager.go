@@ -47,14 +47,14 @@ var NNDefaultSettings = &NNGameSettings{
 	},
 }
 
-// IGameManager is an interface for entities that specify and enforce the rules of a specific game.
+// GameManager is an interface for entities that specify and enforce the rules of a specific game.
 // It contains the logic for starting and ending games, maintains the order of play,
 // validates player moves, and shifts cards between players and dealers.
-type IGameManager interface {
+type GameManager interface {
 	NewGame()
 	StartGame(humans []*NNPlayer, robots int, settings *NNGameSettings)
 	Deal()
-	Play(p *Player, h Hand)
+	Play(p *Player, h hand)
 	EndGame()
 }
 
@@ -62,14 +62,14 @@ type IGameManager interface {
 // It maintains the overall count and the rules for scoring cards that are played.
 // It keeps track of the order of play and ensures that players only play valid cards, during their turn.
 type NNGameManager struct {
-	Settings   *NNGameSettings
-	Players    map[int]NNPlayerStats
-	Dealer     *Dealer
+	settings   *NNGameSettings
+	players    map[int]NNPlayerStats
+	dealer     *dealer
 	playing    bool
 	round      int
-	Count      int
+	count      int
 	currPlayer int
-	Direction  int
+	direction  int
 	// TODO: Add a concurrency-safe field to keep track of which player can draw from the deck. Needed for AutoPickup.
 }
 
@@ -92,7 +92,7 @@ func (mgr *NNGameManager) newGame(players []*NNPlayer, settings *NNGameSettings)
 		fmt.Printf("%v, it's your turn. Select a card from 1-%v\n", player.Name, len(player.hand))
 		var card int
 		for {
-			fmt.Printf("Count: %v\n", mgr.Count)
+			fmt.Printf("Count: %v\n", mgr.count)
 			_, err := fmt.Scanf("%d", &card)
 			if err != nil || card <= 0 || card > len(player.hand) {
 				fmt.Println("Please make a valid selection.")
@@ -101,7 +101,7 @@ func (mgr *NNGameManager) newGame(players []*NNPlayer, settings *NNGameSettings)
 				break
 			}
 		}
-		err := player.PlayCardAt(card - 1)
+		err := player.playCardAt(card - 1)
 		if err != nil {
 			handlePlayError(err)
 		}
@@ -114,47 +114,47 @@ func (mgr *NNGameManager) newGame(players []*NNPlayer, settings *NNGameSettings)
 // It may create games that have both human and AI players.
 func (mgr *NNGameManager) StartGame(humans []*NNPlayer, robots int, settings *NNGameSettings) {
 	mgr.setSettings(settings)
-	mgr.Players = make(map[int]NNPlayerStats)
+	mgr.players = make(map[int]NNPlayerStats)
 	for i, human := range humans {
 		human.id = i
 		human.mgr = mgr
-		mgr.Players[i] = NNPlayerStats{
+		mgr.players[i] = NNPlayerStats{
 			player: human,
-			lives:  mgr.Settings.LivesPerPlayer,
+			lives:  mgr.settings.LivesPerPlayer,
 		}
 	}
 	// TODO: support AI (robot) players
-	mgr.Dealer = new(Dealer)
+	mgr.dealer = new(dealer)
 	mgr.Deal()
 	mgr.round = 0
 	mgr.currPlayer = 0
-	mgr.Direction = 1
+	mgr.direction = 1
 	mgr.playing = true
 }
 
 // SetSettings installs custom rules if provided, else defaults to house rules.
 func (mgr *NNGameManager) setSettings(settings *NNGameSettings) {
 	if settings != nil {
-		mgr.Settings = settings
+		mgr.settings = settings
 	} else {
-		mgr.Settings = NNDefaultSettings
+		mgr.settings = NNDefaultSettings
 	}
 }
 
 // Deal initializes the Dealer with an appropriately-sized shoe and deals cards to each player.
 // It also deals one card face up to begin the game.
 func (mgr *NNGameManager) Deal() {
-	set := mgr.Settings
-	decks := MinDecks(set.CardsPerPlayer, set.WildCards, len(mgr.Players))
-	mgr.Dealer.InitializeDeck(decks)
-	for _, stat := range mgr.Players {
-		hand := mgr.Dealer.DealHand(set.CardsPerPlayer)
-		stat.player.ReceiveHand(hand)
+	set := mgr.settings
+	decks := MinDecks(set.CardsPerPlayer, set.WildCards, len(mgr.players))
+	mgr.dealer.ReplaceShoe(decks)
+	for _, stat := range mgr.players {
+		hand := mgr.dealer.DealHand(set.CardsPerPlayer)
+		stat.player.ReplaceHand(hand)
 	}
-	h := mgr.Dealer.DealHand(1)
+	h := mgr.dealer.DealHand(1)
 	initCount, _ := mgr.ScoreCard(h[0])
-	mgr.Count = initCount
-	mgr.Dealer.HandleDiscard(h)
+	mgr.count = initCount
+	mgr.dealer.HandleDiscard(h)
 }
 
 // MinDecks calculates the minimum number of decks to use in the Shoe, to avoid endless games of 99.
@@ -165,7 +165,7 @@ func MinDecks(cardsEach int, wilds NNWildCards, numPlayers int) int {
 }
 
 // Play validates a player's move, scores their card, and advances play to the next player.
-func (mgr *NNGameManager) Play(p *NNPlayer, h Hand) (err error) {
+func (mgr *NNGameManager) Play(p *NNPlayer, h hand) (err error) {
 	if mgr.CurrPlayer().id != p.id {
 		return errors.New("playing out of turn")
 	} else if c, ok := mgr.getCardFromPlayer(p, h[0]); !ok {
@@ -174,16 +174,16 @@ func (mgr *NNGameManager) Play(p *NNPlayer, h Hand) (err error) {
 		if toAdd, err := mgr.ScoreCard(c); err != nil {
 			return errors.Wrap(err, "invalid card")
 		} else {
-			mgr.Count += toAdd
-			mgr.Dealer.HandleDiscard(h)
+			mgr.count += toAdd
+			mgr.dealer.HandleDiscard(h)
 		}
-		if mgr.Count > mgr.Settings.MaxCount {
+		if mgr.count > mgr.settings.MaxCount {
 			mgr.DeclareLoser(p)
 			// TODO: re-route control flow in a more elegant way
 			return
 		}
 		mgr.reverseIfNeeded(c)
-		hand := mgr.Dealer.DealHand(1)
+		hand := mgr.dealer.DealHand(1)
 		p.AcceptCards(hand)
 		mgr.AdvanceCurrPlayer()
 	}
@@ -192,8 +192,8 @@ func (mgr *NNGameManager) Play(p *NNPlayer, h Hand) (err error) {
 
 // GetCardFromPlayer removes a Card from a player's hand, if it exists.
 // It returns true and the Card if it exists, else false and an empty Card.
-func (mgr *NNGameManager) getCardFromPlayer(p *NNPlayer, c Card) (Card, bool) {
-	if v, ok := mgr.Players[p.id]; ok {
+func (mgr *NNGameManager) getCardFromPlayer(p *NNPlayer, c card) (card, bool) {
+	if v, ok := mgr.players[p.id]; ok {
 		for i, card := range v.player.hand {
 			if card == c {
 				v.player.hand = append(v.player.hand[:i], v.player.hand[i+1:]...)
@@ -201,20 +201,22 @@ func (mgr *NNGameManager) getCardFromPlayer(p *NNPlayer, c Card) (Card, bool) {
 			}
 		}
 	}
-	return Card{}, false
+	return card{}, false
 }
 
 // DeclareLoser announces the loser of the round and ends the game.
 func (mgr *NNGameManager) DeclareLoser(p *NNPlayer) {
 	// TODO: remove the *NNPlayer arg and just use currPlayer
-	fmt.Printf("%d points busts %d! %v loses!\n", mgr.Count, mgr.Settings.MaxCount, p.Name)
+	fmt.Printf("%d points busts %d! %v loses!\n", mgr.count, mgr.settings.MaxCount, p.Name)
 	// TODO: decrement lives instead of just ending the game
 	mgr.EndGame()
 }
 
 // ScoreCard determines the effect of the card on the count.
-func (mgr NNGameManager) ScoreCard(c Card) (toAdd int, err error) {
-	return mgr.ScoreRank(c.rank)
+func (mgr NNGameManager) ScoreCard(c card) (toAdd int, err error) {
+	toAdd, err = mgr.ScoreRank(c.rank)
+	mgr.reverseIfNeeded(c)
+	return
 }
 
 // ScoreRank determines the effect of the rank on the count.
@@ -222,11 +224,11 @@ func (mgr NNGameManager) ScoreCard(c Card) (toAdd int, err error) {
 // as one Rank card cannot have multiple competing effects on the Count.
 // Assumes Reverse has no impact on the count, unless it also happens to be a wild card.
 func (mgr *NNGameManager) ScoreRank(r rank) (toAdd int, err error) {
-	set := mgr.Settings
+	set := mgr.settings
 	wilds := set.WildCards
 	switch r {
 	case wilds.NinetyNine:
-		toAdd = set.MaxCount - mgr.Count
+		toAdd = set.MaxCount - mgr.count
 	case wilds.MinusTen:
 		toAdd = -10
 	case wilds.Zero, wilds.Reverse:
@@ -242,9 +244,9 @@ func (mgr *NNGameManager) ScoreRank(r rank) (toAdd int, err error) {
 }
 
 // ReverseIfNeeded reverses the direction of play if a Reverse card is played.
-func (mgr *NNGameManager) reverseIfNeeded(c Card) {
-	if c.rank == mgr.Settings.WildCards.Reverse {
-		mgr.Direction *= -1
+func (mgr *NNGameManager) reverseIfNeeded(c card) {
+	if c.rank == mgr.settings.WildCards.Reverse {
+		mgr.direction *= -1
 	}
 }
 
@@ -258,12 +260,16 @@ func (mgr *NNGameManager) EndGame() {
 
 // AdvanceCurrPlayer advances play to the next player in the circle, according to the direction of play.
 func (mgr *NNGameManager) AdvanceCurrPlayer() {
-	mgr.currPlayer = utils.Mod(mgr.currPlayer+mgr.Direction, len(mgr.Players))
+	if curr, err := utils.Mod(mgr.currPlayer+mgr.direction, len(mgr.players)); err == nil {
+		mgr.currPlayer = curr
+	} else {
+		mgr.currPlayer = 0
+	}
 }
 
 // CurrPlayer returns the player who is currently taking their turn.
 func (mgr *NNGameManager) CurrPlayer() *NNPlayer {
-	return mgr.Players[mgr.currPlayer].player
+	return mgr.players[mgr.currPlayer].player
 }
 
 // HandlePlayError handles invalid plays attempted by Players during gameplay.
@@ -277,9 +283,9 @@ func handlePlayError(e error) {
 // RevealTable shows all cards in the game, including the draw pile, discard pile,
 // and every player's hand.
 func (mgr NNGameManager) revealTable() {
-	fmt.Printf("Count: %v\n", mgr.Count)
-	for _, stat := range mgr.Players {
+	fmt.Printf("Count: %v\n", mgr.count)
+	for _, stat := range mgr.players {
 		stat.player.revealHand()
 	}
-	mgr.Dealer.RevealDecks()
+	mgr.dealer.revealDecks()
 }
