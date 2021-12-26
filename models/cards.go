@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"math/rand"
 	"shuffle/utils"
 	"strings"
 
@@ -28,7 +27,7 @@ const (
 	King  rank = "K"
 )
 
-var ranks = [13]rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
+var Ranks = [13]rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
 
 // String converts the rank to its recognizable, symbolic representation
 func (r rank) String() string {
@@ -51,7 +50,7 @@ const (
 	Spades   suit = "Spades"
 )
 
-var suits = [4]suit{Clubs, Diamonds, Hearts, Spades}
+var Suits = [4]suit{Clubs, Diamonds, Hearts, Spades}
 
 // String converts the suit to its recognizable, symbolic representation.
 func (s suit) String() string {
@@ -120,12 +119,12 @@ type shoe []card
 
 // NewShoe creates a Shoe composed of an integer number of standard card decks.
 func NewShoe(numDecks int) shoe {
-	sz := utils.Max(numDecks*len(suits)*len(ranks), 0)
+	sz := utils.Max(numDecks*len(Suits)*len(Ranks), 0)
 	s := make(shoe, sz)
 	i := 0
 	for deck := 0; deck < numDecks; deck++ {
-		for _, suit := range suits {
-			for _, rank := range ranks {
+		for _, suit := range Suits {
+			for _, rank := range Ranks {
 				s[i] = NewCard(rank, suit)
 				i++
 			}
@@ -134,36 +133,23 @@ func NewShoe(numDecks int) shoe {
 	return s
 }
 
-// shuffle randomly shuffles a Shoe.
-func (s shoe) shuffle() {
-	for i := 0; i < len(s); i++ {
-		r := rand.Intn(i + 1)
-		if i != r {
-			s[r], s[i] = s[i], s[r]
-		}
-	}
-}
-
 // String converts a Card slice to a compact, coloured representation.
-func String(cards []card, label string) string {
+func String(cards []card) string {
 	str := make([]string, len(cards))
 	for i, card := range cards {
 		str[i] = card.colourString()
 	}
-	if label != "" {
-		label += ": "
-	}
-	return fmt.Sprintf("%s[%s]", label, strings.Join(str, ", "))
+	return fmt.Sprintf("[%s]", strings.Join(str, ", "))
 }
 
 // String converts a Hand to a compact, coloured representation.
 func (h hand) String() string {
-	return String(h, "Hand")
+	return String(h)
 }
 
 // String converts a Shoe to a compact, coloured representation.
 func (s shoe) String() string {
-	return String(s, "Shoe")
+	return String(s)
 }
 
 // Debugging Helper Methods
@@ -172,52 +158,4 @@ func (s shoe) String() string {
 func revealPile(name string, s shoe) {
 	fmt.Printf("%s pile: %d cards\n", name, len(s))
 	fmt.Println(s)
-}
-
-// longString displays a rank in long form.
-func (r rank) longString() string {
-	switch r {
-	case Ace:
-		return "Ace"
-	case Two:
-		return "Two"
-	case Three:
-		return "Three"
-	case Four:
-		return "Four"
-	case Five:
-		return "Five"
-	case Six:
-		return "Six"
-	case Seven:
-		return "Seven"
-	case Eight:
-		return "Eight"
-	case Nine:
-		return "Nine"
-	case Ten:
-		return "Ten"
-	case Jack:
-		return "Jack"
-	case Queen:
-		return "Queen"
-	case King:
-		return "King"
-	default:
-		return "invalid rank"
-	}
-}
-
-// longString displays a suit in long form.
-func (s suit) longString() string {
-	return string(s)
-}
-
-// produceCode creates the initialization code for a collection of cards.
-func produceCode(cards []card) {
-	fmt.Printf("{\n")
-	for _, card := range cards {
-		fmt.Printf("\tNewCard(%v, %v),\n", card.rank.longString(), card.suit.longString())
-	}
-	fmt.Printf("}\n")
 }

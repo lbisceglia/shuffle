@@ -124,7 +124,6 @@ func (mgr *NNGameManager) StartGame(humans []*NNPlayer, robots int, settings *NN
 		}
 	}
 	// TODO: support AI (robot) players
-	mgr.dealer = new(dealer)
 	mgr.Deal()
 	mgr.round = 0
 	mgr.currPlayer = 0
@@ -146,7 +145,8 @@ func (mgr *NNGameManager) setSettings(settings *NNGameSettings) {
 func (mgr *NNGameManager) Deal() {
 	set := mgr.settings
 	decks := MinDecks(set.CardsPerPlayer, set.WildCards, len(mgr.players))
-	mgr.dealer.ReplaceShoe(decks)
+	mgr.dealer = NewDealer(decks, NewRNG(), true)
+
 	for _, stat := range mgr.players {
 		hand := mgr.dealer.DealHand(set.CardsPerPlayer)
 		stat.player.ReplaceHand(hand)

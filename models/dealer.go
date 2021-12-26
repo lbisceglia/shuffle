@@ -1,9 +1,11 @@
 package models
 
-import "shuffle/utils"
+import (
+	"shuffle/utils"
+)
 
-// Dealer is an interface for entities that perform actions on Shoes.
-// Actions include reording Cards, adding Cards to, and removing Cards from Shoes.
+// A Dealer perform actions on shoes.
+// Actions include reording cards, adding cards to, and removing cards from shoes.
 type Dealer interface {
 	ReplaceShoe(numDecks int)
 	Shuffle()
@@ -17,13 +19,15 @@ type Dealer interface {
 // the discard pile and draw from it.
 type dealer struct {
 	drawIdx int
+	rand    Randomizer
 	draw    shoe
 	discard shoe
 }
 
 // NewDealer constructs a new dealer with the given number of decks, shuffled by default.
-func NewDealer(numDecks int, shuffle ...bool) *dealer {
+func NewDealer(numDecks int, rng Randomizer, shuffle ...bool) *dealer {
 	d := new(dealer)
+	d.rand = rng
 	d.replaceShoe(numDecks)
 	if len(shuffle) == 0 || shuffle[0] {
 		d.Shuffle()
@@ -33,7 +37,7 @@ func NewDealer(numDecks int, shuffle ...bool) *dealer {
 
 // Shuffle randomly shuffles the draw pile.
 func (d *dealer) Shuffle() {
-	d.draw.shuffle()
+	d.rand.Shuffle(d.draw)
 	d.drawIdx = 0
 }
 

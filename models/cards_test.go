@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"shuffle/utils"
 	"testing"
 )
@@ -304,21 +303,22 @@ func testShoe(t *testing.T, s shoe, test ShoeResult) {
 	}
 }
 
-func TestShuffle(t *testing.T) {
-	utils.SetRandomSeed(2021)
-	defer utils.TeardownRandomSubtest()
+// TODO: remove
+// func TestShuffle(t *testing.T) {
+// 	utils.SetRandomSeed(2021)
+// 	defer utils.TeardownRandomSubtest()
 
-	test := shuffled2021Deck
+// 	test := shuffled2021Deck
 
-	deck := NewShoe(1)
-	deck.shuffle()
+// 	deck := NewShoe(1)
+// 	deck.shuffle()
 
-	deckResult := ShoeResult{1, cardsPerDeck, suitsPerDeck, ranksPerDeck}
-	testShoe(t, deck, deckResult)
+// 	deckResult := ShoeResult{1, cardsPerDeck, suitsPerDeck, ranksPerDeck}
+// 	testShoe(t, deck, deckResult)
 
-	for i, card := range deck {
-		t.Run(fmt.Sprintf("card %v", i), func(t *testing.T) {
-			utils.Evaluate(t, card, test[i])
-		})
-	}
-}
+// 	for i, card := range deck {
+// 		t.Run(fmt.Sprintf("card %v", i), func(t *testing.T) {
+// 			utils.Evaluate(t, card, test[i])
+// 		})
+// 	}
+// }

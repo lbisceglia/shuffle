@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TeardownRandomSubtest() {
-	Reset()
-}
+// func TeardownRandomSubtest() {
+// 	Reset()
+// }
 
 func Evaluate(t *testing.T, got interface{}, want interface{}, context ...string) {
 	if got != want {
