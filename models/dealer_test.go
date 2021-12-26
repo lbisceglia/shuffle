@@ -198,5 +198,5 @@ func TestNewDealer(t *testing.T) {
 }
 
 func TestHandleDiscard(t *testing.T) {
-	// TODO
+	// TODO after mocking refactor
 }
