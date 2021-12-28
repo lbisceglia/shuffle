@@ -1,12 +1,8 @@
 package main
 
 import (
-	"shuffle/models"
+	"shuffle/cards"
 )
-
-// func init() {
-// 	utils.Randomize()
-// }
 
 // Main initializes a single round of 99 with 4 players.
 // The current implementation is a simple proof of concept.
@@ -15,14 +11,14 @@ import (
 func main() {
 	names := []string{"Alice", "Bob", "Charlie", "Dan"}
 	players := initializePlayers(names)
-	mgr := new(models.NNGameManager)
+	mgr := new(cards.NNGameManager)
 	mgr.NewGame(players)
 }
 
 // InitializePlayers is a factory that creates players with the given names.
-func initializePlayers(names []string) (players []*models.NNPlayer) {
+func initializePlayers(names []string) (players []*cards.NNPlayer) {
 	for _, name := range names {
-		players = append(players, models.NewNNPlayer(name))
+		players = append(players, cards.NewNNPlayer(name))
 	}
 	return players
 }

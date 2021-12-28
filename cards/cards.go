@@ -1,4 +1,4 @@
-package models
+package cards
 
 import (
 	"fmt"
@@ -8,29 +8,29 @@ import (
 	"github.com/fatih/color"
 )
 
-// rank is a model class for playing card ranks.
-type rank string
+// Rank is a model class for playing card ranks.
+type Rank string
 
 const (
-	Ace   rank = "A"
-	Two   rank = "2"
-	Three rank = "3"
-	Four  rank = "4"
-	Five  rank = "5"
-	Six   rank = "6"
-	Seven rank = "7"
-	Eight rank = "8"
-	Nine  rank = "9"
-	Ten   rank = "10"
-	Jack  rank = "J"
-	Queen rank = "Q"
-	King  rank = "K"
+	Ace   Rank = "A"
+	Two   Rank = "2"
+	Three Rank = "3"
+	Four  Rank = "4"
+	Five  Rank = "5"
+	Six   Rank = "6"
+	Seven Rank = "7"
+	Eight Rank = "8"
+	Nine  Rank = "9"
+	Ten   Rank = "10"
+	Jack  Rank = "J"
+	Queen Rank = "Q"
+	King  Rank = "K"
 )
 
-var Ranks = [13]rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
+var Ranks = [13]Rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
 
 // String converts the rank to its recognizable, symbolic representation
-func (r rank) String() string {
+func (r Rank) String() string {
 	switch r {
 	case Ace, Two, Three, Four, Five, Six,
 		Seven, Eight, Nine, Ten, Jack, Queen, King:
@@ -40,20 +40,20 @@ func (r rank) String() string {
 	}
 }
 
-// suit is a model class for playing card suits.
-type suit string
+// Suit is a model class for playing card suits.
+type Suit string
 
 const (
-	Clubs    suit = "Clubs"
-	Diamonds suit = "Diamonds"
-	Hearts   suit = "Hearts"
-	Spades   suit = "Spades"
+	Clubs    Suit = "Clubs"
+	Diamonds Suit = "Diamonds"
+	Hearts   Suit = "Hearts"
+	Spades   Suit = "Spades"
 )
 
-var Suits = [4]suit{Clubs, Diamonds, Hearts, Spades}
+var Suits = [4]Suit{Clubs, Diamonds, Hearts, Spades}
 
 // String converts the suit to its recognizable, symbolic representation.
-func (s suit) String() string {
+func (s Suit) String() string {
 	switch s {
 	case Clubs:
 		return "\u2663" // ♣
@@ -68,16 +68,16 @@ func (s suit) String() string {
 	}
 }
 
-// card is a model class for playing cards.
+// Card is a model class for playing cards.
 // cards are uniquely identified by their rank and suit.
-type card struct {
-	rank rank
-	suit suit
+type Card struct {
+	rank Rank
+	suit Suit
 }
 
 // NewCard constructs a card with the given rank and suit.
-func NewCard(r rank, s suit) card {
-	return card{
+func NewCard(r Rank, s Suit) Card {
+	return Card{
 		rank: r,
 		suit: s,
 	}
@@ -85,7 +85,7 @@ func NewCard(r rank, s suit) card {
 
 // String converts the card to its most compact representation, its rank and suit symbol.
 // String is used primarily for command line applications, including debugging.
-func (c card) String() string {
+func (c Card) String() string {
 	r, s := c.rank.String(), c.suit.String()
 	if strings.HasPrefix(r, "invalid") || strings.HasPrefix(s, "invalid") {
 		return fmt.Sprintf("%s, %s", r, s)
@@ -97,7 +97,7 @@ func (c card) String() string {
 // Cards are coloured based on their suit:
 // Diamonds and Hearts are red, Clubs and Spades are white.
 // colourString is used primarily for command line applications, including debugging.
-func (c card) colourString() string {
+func (c Card) colourString() string {
 	switch c.suit {
 	case Clubs, Spades:
 		white := color.New(color.FgWhite).SprintfFunc()
@@ -111,16 +111,16 @@ func (c card) colourString() string {
 }
 
 // hand is a collection of cards that can be held by a Player.
-type hand []card
+type hand []Card
 
-// shoe is a collection of cards that can be managed by a Dealer.
+// Shoe is a collection of cards that can be managed by a Dealer.
 // It contains an integer number of standard card decks.
-type shoe []card
+type Shoe []Card
 
 // NewShoe creates a Shoe composed of an integer number of standard card decks.
-func NewShoe(numDecks int) shoe {
+func NewShoe(numDecks int) Shoe {
 	sz := utils.Max(numDecks*len(Suits)*len(Ranks), 0)
-	s := make(shoe, sz)
+	s := make(Shoe, sz)
 	i := 0
 	for deck := 0; deck < numDecks; deck++ {
 		for _, suit := range Suits {
@@ -134,7 +134,7 @@ func NewShoe(numDecks int) shoe {
 }
 
 // String converts a Card slice to a compact, coloured representation.
-func String(cards []card) string {
+func String(cards []Card) string {
 	str := make([]string, len(cards))
 	for i, card := range cards {
 		str[i] = card.colourString()
@@ -148,14 +148,6 @@ func (h hand) String() string {
 }
 
 // String converts a Shoe to a compact, coloured representation.
-func (s shoe) String() string {
+func (s Shoe) String() string {
 	return String(s)
-}
-
-// Debugging Helper Methods
-
-// revealPile prints out all the remaining Cards in a Shoe.
-func revealPile(name string, s shoe) {
-	fmt.Printf("%s pile: %d cards\n", name, len(s))
-	fmt.Println(s)
 }

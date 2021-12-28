@@ -1,16 +1,16 @@
-package models
+package cards
 
 import (
 	"shuffle/utils"
 )
 
-// A Dealer perform actions on shoes.
-// Actions include reording cards, adding cards to, and removing cards from shoes.
+// A Dealer perform actions on Shoes.
+// Actions include reording Cards, adding Cards to, and removing Cards from Shoes.
 type Dealer interface {
 	ReplaceShoe(numDecks int)
 	Shuffle()
 	DealHand(size int)
-	HandleDiscard(cards []card)
+	HandleDiscard(cards []Card)
 }
 
 // dealer is an implementation of Dealer.
@@ -20,8 +20,8 @@ type Dealer interface {
 type dealer struct {
 	drawIdx int
 	rand    Randomizer
-	draw    shoe
-	discard shoe
+	draw    Shoe
+	discard Shoe
 }
 
 // NewDealer constructs a new dealer with the given number of decks, shuffled by default.
@@ -72,7 +72,7 @@ func (d *dealer) reshuffle() {
 }
 
 // HandleDiscard adds the given cards to the discard pile.
-func (d *dealer) HandleDiscard(cards []card) {
+func (d *dealer) HandleDiscard(cards []Card) {
 	d.discard = append(d.discard, cards...)
 }
 
@@ -102,27 +102,4 @@ func (d dealer) discardSize() int {
 // drawEmpty returns true if the draw pile is empty, false otherwise.
 func (d dealer) drawEmpty() bool {
 	return len(d.draw) == d.drawIdx
-}
-
-// Debugging Helper Methods
-
-// DrawPile returns the remaining cards in the Dealer's draw pile.
-func (d dealer) drawPile() shoe {
-	return d.draw[d.drawIdx:]
-}
-
-// RevealDeck prints out the remaining cards in the Dealer's draw pile.
-func (d dealer) revealDeck() {
-	revealPile("Draw", d.drawPile())
-}
-
-// RevealDiscard print out the remaining cards in the Dealer's discard pile.
-func (d dealer) revealDiscard() {
-	revealPile("Discard", d.discard)
-}
-
-// revealDecks print out the remaining cards in the Dealer's draw and discard piles, respectively.
-func (d dealer) revealDecks() {
-	d.revealDeck()
-	d.revealDiscard()
 }

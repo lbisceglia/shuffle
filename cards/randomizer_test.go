@@ -1,8 +1,11 @@
-package utils
+package cards
 
 import (
-	"math/rand"
+	"shuffle/utils"
 	"testing"
+
+	// empty import is a temporary workaround for this issue: https://github.com/golang/mock/issues/415
+	_ "github.com/golang/mock/mockgen/model"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -17,6 +20,12 @@ const (
 type RandomSeedResult struct {
 	method string
 	n      int64
+}
+
+type ShuffleResult struct {
+	seed     int64
+	numDecks int
+	want     Shoe
 }
 
 var p = message.NewPrinter(language.English)
@@ -81,14 +90,14 @@ func TestSetRandomSeed(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			defer TeardownRandomSubtest()
+			rng := NewRng()
 
 			for _, action := range test {
 				switch action.method {
 				case SEED:
-					SetRandomSeed(action.n)
+					rng.Seed(action.n)
 				case READ:
-					if got, want := rand.Int63(), action.n; got != want {
+					if got, want := rng.r.Int63(), action.n; got != want {
 						t.Fatalf("next rand = %d; want %d\n", got, want)
 					}
 				default:
@@ -101,10 +110,10 @@ func TestSetRandomSeed(t *testing.T) {
 
 func TestGenerateRandomSeed(t *testing.T) {
 	set := make(map[int64]bool)
-	ITERS := 1000000
+	ITERS := 100000
 
 	for i := 0; i < ITERS; i++ {
-		if seed, err := generateRandomSeed(); err != nil {
+		if seed, err := GenerateRandomSeed(); err != nil {
 			t.Errorf("system's secure random number generator failed")
 		} else if set[seed] {
 			t.Errorf("random seed %v either not unique or hashing collision occured", seed)
@@ -120,11 +129,41 @@ func TestGenerateRandomSeed(t *testing.T) {
 }
 
 func TestRandomize(t *testing.T) {
+	rng := NewRng()
 	defer func() {
 		if err := recover(); err != nil {
 			t.Errorf("the code panicked")
 		}
-		TeardownRandomSubtest()
 	}()
-	Randomize()
+	rng.Randomize()
+}
+
+func TestShuffle(t *testing.T) {
+	tests := map[string]ShuffleResult{
+		"no deck": {
+			2021,
+			0,
+			Shoe{},
+		},
+		"single deck": {
+			2021,
+			1,
+			shuffled2021Deck,
+		},
+		"multi-deck shoe": {
+			2021,
+			2,
+			shuffled2021Shoe,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			rng := NewRngAt(test.seed)
+			shoe := NewShoe(test.numDecks)
+			rng.Shuffle(shoe)
+			// produceCode(shoe)
+			utils.Error(t, shoe, test.want)
+		})
+	}
 }

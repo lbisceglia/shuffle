@@ -1,7 +1,6 @@
-package models
+package cards
 
 import (
-	"fmt"
 	"shuffle/utils"
 	"testing"
 )
@@ -24,11 +23,11 @@ type HandResult struct {
 type DealerResult struct {
 	numCards int
 	shuffle  bool
-	draw     shoe
+	draw     Shoe
 }
 
 func TestDealHand(t *testing.T) {
-	reshuffled := shoe{
+	reshuffled := Shoe{
 		NewCard(Seven, Diamonds),
 		NewCard(Nine, Spades),
 		NewCard(Eight, Clubs),
@@ -112,28 +111,27 @@ func TestDealHand(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			utils.SetRandomSeed(2021)
-			defer utils.TeardownRandomSubtest()
-
-			d := NewDealer(1)
+			// TODO: mock the RNG
+			rng := NewRngAt(2021)
+			d := NewDealer(1, rng)
 
 			for _, handResult := range test {
 				switch handResult.method {
 				case DRAW:
 					t.Run(handResult.name, func(t *testing.T) {
 						hand := d.DealHand(handResult.cardsRequested)
-						utils.Evaluate(t, len(hand), handResult.cardsTransferred, "cards dealt")
-						utils.Evaluate(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
-						utils.Evaluate(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
+						utils.Error(t, len(hand), handResult.cardsTransferred, "cards dealt")
+						utils.Error(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
+						utils.Error(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
 					})
 				case DISCARD:
 					t.Run(handResult.name, func(t *testing.T) {
 						before := d.drawSize() + d.discardSize()
 						d.HandleDiscard(handResult.handTransferred)
 						after := d.drawSize() + d.discardSize()
-						utils.Evaluate(t, after-before, handResult.cardsTransferred, "cards transferred to dealer")
-						utils.Evaluate(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
-						utils.Evaluate(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
+						utils.Error(t, after-before, handResult.cardsTransferred, "cards transferred to dealer")
+						utils.Error(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
+						utils.Error(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
 					})
 				default:
 					t.Fatalf("invalid dealer action attempt")
@@ -144,37 +142,37 @@ func TestDealHand(t *testing.T) {
 }
 
 func TestReplaceShoe(t *testing.T) {
-	utils.SetRandomSeed(2021)
-	defer utils.TeardownRandomSubtest()
-
-	d := NewDealer(1, false)
+	// mock the RNG
+	rng := NewRngAt(2021)
+	d := NewDealer(1, rng, false)
 	draw := d.drawPile()
 
-	for i, card := range draw {
-		t.Run(fmt.Sprintf("card %d, standard deck", i), func(t *testing.T) {
-			utils.Evaluate(t, card, standardDeck[i])
-		})
-	}
+	t.Run("standard deck", func(t *testing.T) {
+		for i, card := range draw {
+			utils.Fatal(t, card, standardDeck[i])
+		}
+	})
 
-	utils.Evaluate(t, len(draw), 52)
+	utils.Error(t, len(draw), 52)
 
 	SIZE := 5
 	d.DealHand(SIZE)
 	draw = d.drawPile()
 
-	utils.Evaluate(t, len(draw), 52-SIZE)
+	utils.Error(t, len(draw), 52-SIZE)
 
 	test := shuffled2021Deck
 
 	d.ReplaceShoe(1)
 	draw = d.drawPile()
-	utils.Evaluate(t, len(draw), 52)
 
-	for i, card := range draw {
-		t.Run(fmt.Sprintf("card %v, replaced deck", i), func(t *testing.T) {
-			utils.Evaluate(t, card, test[i])
-		})
-	}
+	utils.Error(t, len(draw), 52)
+
+	t.Run("replaced deck", func(t *testing.T) {
+		for i, card := range draw {
+			utils.Fatal(t, card, test[i])
+		}
+	})
 }
 
 func TestNewDealer(t *testing.T) {
@@ -187,16 +185,16 @@ func TestNewDealer(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			utils.SetRandomSeed(2021)
-			defer utils.TeardownRandomSubtest()
-			d := NewDealer(test.numCards, test.shuffle)
+			// TODO: mock rng
+			rng := NewRngAt(2021)
+			d := NewDealer(test.numCards, rng, test.shuffle)
 			for i, card := range d.drawPile() {
-				utils.Evaluate(t, card, test.draw[i])
+				utils.Fatal(t, card, test.draw[i])
 			}
 		})
 	}
 }
 
 func TestHandleDiscard(t *testing.T) {
-	// TODO after mocking refactor
+	// TODO after mocking RNG
 }

@@ -1,8 +1,6 @@
-package models
+package cards
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -34,11 +32,11 @@ func NewNNPlayer(name string) *NNPlayer {
 
 // selectCardAt selects the card at index i.
 // It returns an error if i is invalid.
-func (p *NNPlayer) selectCardAt(i int) (c card, err error) {
+func (p *NNPlayer) selectCardAt(i int) (c Card, err error) {
 	if 0 <= i && i < len(p.hand) {
 		return p.hand[i], nil
 	} else {
-		return card{}, errors.Wrap(err, "invalid card selected")
+		return Card{}, errors.Wrap(err, "invalid card selected")
 	}
 }
 
@@ -69,11 +67,4 @@ func (p *NNPlayer) AcceptCards(h hand) {
 // ReplaceHand replaces a Player's existing Hand with an entirely new Hand.
 func (p *NNPlayer) ReplaceHand(h hand) {
 	p.hand = h
-}
-
-// Debugging Helper Methods
-
-// revealHand prints out the Player's Hand.
-func (p NNPlayer) revealHand() {
-	fmt.Printf("%v\t(p%v): \t%v\n", p.Name, p.id, p.hand.String())
 }

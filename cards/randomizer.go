@@ -1,4 +1,4 @@
-package models
+package cards
 
 import (
 	crand "crypto/rand"
@@ -8,10 +8,11 @@ import (
 	"sync"
 )
 
+//go:generate mockgen -build_flags="-mod=vendor" -source=$GOFILE -destination=../mocks/$GOFILE -package=$GOPACKAGE
 type Randomizer interface {
 	Seed(seed int64)
 	Randomize()
-	Shuffle(s shoe)
+	Shuffle(s Shoe)
 }
 
 type rng struct {
@@ -19,8 +20,16 @@ type rng struct {
 	r    *mrand.Rand
 }
 
-func NewRNG() *rng {
+func NewRng() *rng {
 	seed, _ := GenerateRandomSeed()
+	rng := &rng{
+		once: sync.Once{},
+		r:    mrand.New(mrand.NewSource(seed)),
+	}
+	return rng
+}
+
+func NewRngAt(seed int64) *rng {
 	rng := &rng{
 		once: sync.Once{},
 		r:    mrand.New(mrand.NewSource(seed)),
@@ -58,6 +67,6 @@ func (rng *rng) Randomize() {
 }
 
 // Shuffle randomly shuffles a Shoe.
-func (rng *rng) Shuffle(s shoe) {
+func (rng *rng) Shuffle(s Shoe) {
 	rng.r.Shuffle(len(s), func(i, j int) { s[j], s[i] = s[i], s[j] })
 }
