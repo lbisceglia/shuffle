@@ -110,8 +110,8 @@ func (c Card) colourString() string {
 	}
 }
 
-// hand is a collection of cards that can be held by a Player.
-type hand []Card
+// Hand is a collection of cards that can be held by a Player.
+type Hand []Card
 
 // Shoe is a collection of cards that can be managed by a Dealer.
 // It contains an integer number of standard card decks.
@@ -143,7 +143,7 @@ func String(cards []Card) string {
 }
 
 // String converts a Hand to a compact, coloured representation.
-func (h hand) String() string {
+func (h Hand) String() string {
 	return String(h)
 }
 

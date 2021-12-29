@@ -6,7 +6,6 @@ package cards
 
 import (
 	reflect "reflect"
-	cards "shuffle/cards"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -59,7 +58,7 @@ func (mr *MockRandomizerMockRecorder) Seed(seed interface{}) *gomock.Call {
 }
 
 // Shuffle mocks base method.
-func (m *MockRandomizer) Shuffle(s cards.Shoe) {
+func (m *MockRandomizer) Shuffle(s Shoe) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Shuffle", s)
 }

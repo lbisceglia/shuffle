@@ -3,6 +3,8 @@ package cards
 import (
 	"shuffle/utils"
 	"testing"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 const (
@@ -17,13 +19,28 @@ type HandResult struct {
 	cardsTransferred    int
 	drawExpectedSize    int
 	discardExpectedSize int
-	handTransferred     hand
+	shuffles            int
+	handTransferred     Hand
 }
 
 type DealerResult struct {
 	numCards int
 	shuffle  bool
-	draw     Shoe
+	shuffles int
+}
+
+var ctrl *gomock.Controller
+var random *MockRandomizer
+var d *dealer
+
+func SetupTest(t *testing.T) {
+	ctrl = gomock.NewController(t)
+	random = NewMockRandomizer(ctrl)
+	d = NewDealer(1, random, false)
+}
+
+func TeardownTest() {
+	ctrl.Finish()
 }
 
 func TestDealHand(t *testing.T) {
@@ -83,75 +100,69 @@ func TestDealHand(t *testing.T) {
 	}
 
 	tests := map[string][]HandResult{
+		// {name, method, cardsRequested, cardsTransferred, drawExpectedSize, discardExpectedSize, shuffles, handTransferred}
 		"no reshuffle": {
-			{"empty request", DRAW, 0, 0, 52, 0, hand{}},
-			{"empty idempotent", DRAW, 0, 0, 52, 0, hand{}},
-			{"single request, full fill", DRAW, 1, 1, 51, 0, hand(shuffled2021Deck[:1])},
-			{"large request, full fill", DRAW, 50, 50, 1, 0, hand(shuffled2021Deck[1:51])},
-			{"large request, partial fill", DRAW, 17, 1, 0, 0, hand(shuffled2021Deck[51:])},
-			{"single request, empty fill", DRAW, 1, 0, 0, 0, hand{}},
-			{"large request, empty fill", DRAW, 17, 0, 0, 0, hand{}},
+			{"empty request", DRAW, 0, 0, 52, 0, 0, Hand{}},
+			{"empty idempotent", DRAW, 0, 0, 52, 0, 0, Hand{}},
+			{"single request, full fill", DRAW, 1, 1, 51, 0, 0, Hand(shuffled2021Deck[:1])},
+			{"large request, full fill", DRAW, 50, 50, 1, 0, 0, Hand(shuffled2021Deck[1:51])},
+			{"large request, partial fill", DRAW, 17, 1, 0, 0, 1, Hand(shuffled2021Deck[51:])},
+			{"single request, empty fill", DRAW, 1, 0, 0, 0, 0, Hand{}},
+			{"large request, empty fill", DRAW, 17, 0, 0, 0, 0, Hand{}},
 		},
 		"reshuffle after exhaustion": {
-			{"large request, full fill", DRAW, 52, 52, 0, 0, hand(shuffled2021Deck)},
-			{"replenish", DISCARD, 0, 52, 0, 52, hand(shuffled2021Deck)},
-			{"full fill, after reshuffle", DRAW, 20, 20, 32, 0, hand(reshuffled[:20])},
+			{"large request, full fill", DRAW, 52, 52, 0, 0, 1, Hand(shuffled2021Deck)},
+			{"replenish", DISCARD, 0, 52, 0, 52, 0, Hand(shuffled2021Deck)},
+			{"full fill, after reshuffle", DRAW, 20, 20, 32, 0, 1, Hand(reshuffled[:20])},
 		},
 		"reshuffle during draw, full fill": {
-			{"large request, full fill", DRAW, 51, 51, 1, 0, hand(shuffled2021Deck[:51])},
-			{"replenish", DISCARD, 0, 2, 1, 2, hand{NewCard(Jack, Spades), NewCard(Five, Hearts)}},
-			{"full fill with intermittent reshuffle", DRAW, 2, 2, 1, 0, hand{NewCard(Four, Clubs), NewCard(Jack, Spades)}},
+			{"large request, full fill", DRAW, 51, 51, 1, 0, 0, Hand(shuffled2021Deck[:51])},
+			{"replenish", DISCARD, 0, 2, 1, 2, 0, Hand{NewCard(Jack, Spades), NewCard(Five, Hearts)}},
+			{"full fill with intermittent reshuffle", DRAW, 2, 2, 1, 0, 1, Hand{NewCard(Four, Clubs), NewCard(Jack, Spades)}},
 		},
 		"reshuffle during draw, partial fill": {
-			{"large request, full fill", DRAW, 51, 51, 1, 0, hand(shuffled2021Deck[:51])},
-			{"replenish", DISCARD, 0, 2, 1, 2, hand{NewCard(Jack, Spades), NewCard(Five, Hearts)}},
-			{"partial fill with intermittent reshuffle", DRAW, 4, 3, 0, 0, hand{NewCard(Four, Clubs), NewCard(Jack, Spades), NewCard(Five, Hearts)}},
+			{"large request, full fill", DRAW, 51, 51, 1, 0, 0, Hand(shuffled2021Deck[:51])},
+			{"replenish", DISCARD, 0, 2, 1, 2, 0, Hand{NewCard(Jack, Spades), NewCard(Five, Hearts)}},
+			{"partial fill with intermittent reshuffle", DRAW, 4, 3, 0, 0, 2, Hand{NewCard(Four, Clubs), NewCard(Jack, Spades), NewCard(Five, Hearts)}},
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			// TODO: mock the RNG
-			rng := NewRngAt(2021)
-			d := NewDealer(1, rng)
-
+			SetupTest(t)
 			for _, handResult := range test {
-				switch handResult.method {
-				case DRAW:
-					t.Run(handResult.name, func(t *testing.T) {
+				t.Run(handResult.name, func(t *testing.T) {
+
+					random.EXPECT().Shuffle(gomock.Any()).Times(handResult.shuffles)
+
+					switch handResult.method {
+					case DRAW:
 						hand := d.DealHand(handResult.cardsRequested)
 						utils.Error(t, len(hand), handResult.cardsTransferred, "cards dealt")
 						utils.Error(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
 						utils.Error(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
-					})
-				case DISCARD:
-					t.Run(handResult.name, func(t *testing.T) {
+					case DISCARD:
 						before := d.drawSize() + d.discardSize()
 						d.HandleDiscard(handResult.handTransferred)
 						after := d.drawSize() + d.discardSize()
 						utils.Error(t, after-before, handResult.cardsTransferred, "cards transferred to dealer")
 						utils.Error(t, d.drawSize(), handResult.drawExpectedSize, "draw cards remaining")
 						utils.Error(t, d.discardSize(), handResult.discardExpectedSize, "cards in discard")
-					})
-				default:
-					t.Fatalf("invalid dealer action attempt")
-				}
+					default:
+						t.Fatalf("invalid dealer action attempt")
+					}
+				})
 			}
+			TeardownTest()
 		})
 	}
 }
 
 func TestReplaceShoe(t *testing.T) {
-	// mock the RNG
-	rng := NewRngAt(2021)
-	d := NewDealer(1, rng, false)
-	draw := d.drawPile()
+	random.EXPECT().Shuffle(gomock.Any()).Times(2)
 
-	t.Run("standard deck", func(t *testing.T) {
-		for i, card := range draw {
-			utils.Fatal(t, card, standardDeck[i])
-		}
-	})
+	d := NewDealer(1, random)
+	draw := d.drawPile()
 
 	utils.Error(t, len(draw), 52)
 
@@ -161,40 +172,25 @@ func TestReplaceShoe(t *testing.T) {
 
 	utils.Error(t, len(draw), 52-SIZE)
 
-	test := shuffled2021Deck
-
 	d.ReplaceShoe(1)
 	draw = d.drawPile()
 
-	utils.Error(t, len(draw), 52)
-
-	t.Run("replaced deck", func(t *testing.T) {
-		for i, card := range draw {
-			utils.Fatal(t, card, test[i])
-		}
-	})
+	utils.Fatal(t, len(draw), 52)
 }
 
 func TestNewDealer(t *testing.T) {
 	tests := map[string]DealerResult{
-		"unshuffled, single":   {1, false, standardDeck},
-		"unshuffled, multiple": {2, false, append(standardDeck, standardDeck...)},
-		"shuffled, single":     {1, true, shuffled2021Deck},
-		"shuffled, multiple":   {2, true, shuffled2021Shoe},
+		"unshuffled, single":   {1, false, 0},
+		"unshuffled, multiple": {2, false, 0},
+		"shuffled, single":     {1, true, 1},
+		"shuffled, multiple":   {2, true, 1},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			// TODO: mock rng
-			rng := NewRngAt(2021)
-			d := NewDealer(test.numCards, rng, test.shuffle)
-			for i, card := range d.drawPile() {
-				utils.Fatal(t, card, test.draw[i])
-			}
+			random.EXPECT().Shuffle(gomock.Any()).Times(test.shuffles)
+
+			NewDealer(test.numCards, random, test.shuffle)
 		})
 	}
-}
-
-func TestHandleDiscard(t *testing.T) {
-	// TODO after mocking RNG
 }

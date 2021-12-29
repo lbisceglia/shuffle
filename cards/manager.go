@@ -54,7 +54,7 @@ type GameManager interface {
 	NewGame()
 	StartGame(humans []*NNPlayer, robots int, settings *NNGameSettings)
 	Deal()
-	Play(p *Player, h hand)
+	Play(p *Player, h Hand)
 	EndGame()
 }
 
@@ -165,7 +165,7 @@ func MinDecks(cardsEach int, wilds NNWildCards, numPlayers int) int {
 }
 
 // Play validates a player's move, scores their card, and advances play to the next player.
-func (mgr *NNGameManager) Play(p *NNPlayer, h hand) (err error) {
+func (mgr *NNGameManager) Play(p *NNPlayer, h Hand) (err error) {
 	if mgr.CurrPlayer().id != p.id {
 		return errors.New("playing out of turn")
 	} else if c, ok := mgr.getCardFromPlayer(p, h[0]); !ok {

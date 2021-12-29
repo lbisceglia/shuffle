@@ -9,7 +9,7 @@ import (
 type Dealer interface {
 	ReplaceShoe(numDecks int)
 	Shuffle()
-	DealHand(size int)
+	DealHand(size int) Hand
 	HandleDiscard(cards []Card)
 }
 
@@ -44,10 +44,10 @@ func (d *dealer) Shuffle() {
 // DealHand deals a number of Cards off the top of the draw pile.
 // If the draw pile is exhausted during a deal, the Dealer will automatically reshuffle
 // the discard pile and draw from it.
-func (d *dealer) DealHand(size int) hand {
+func (d *dealer) DealHand(size int) Hand {
 	// Calculate the size of the hand
 	sz := utils.Min(size, d.drawSize()+d.discardSize())
-	hand := make(hand, sz)
+	hand := make(Hand, sz)
 	if sz > 0 {
 		end := utils.Min(len(d.draw), d.drawIdx+sz)
 		copied := copy(hand, d.draw[d.drawIdx:end])
@@ -57,9 +57,6 @@ func (d *dealer) DealHand(size int) hand {
 		}
 		if copied < sz {
 			copy(hand[copied:], d.DealHand(sz-copied))
-		}
-		if d.drawEmpty() {
-			d.reshuffle()
 		}
 	}
 	return hand

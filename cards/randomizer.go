@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-//go:generate mockgen -build_flags="-mod=vendor" -source=$GOFILE -destination=../mocks/$GOFILE -package=$GOPACKAGE
+//go:generate mockgen -build_flags="-mod=vendor" -source=$GOFILE -destination=./mock_$GOFILE -package=$GOPACKAGE
 type Randomizer interface {
 	Seed(seed int64)
 	Randomize()
