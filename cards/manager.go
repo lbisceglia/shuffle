@@ -1,4 +1,4 @@
-package models
+package cards
 
 import (
 	"fmt"
@@ -19,10 +19,10 @@ type NNPlayerStats struct {
 
 // NNWildCards specifies all relevant wild cards for a game of 99.
 type NNWildCards struct {
-	Reverse    rank
-	NinetyNine rank
-	MinusTen   rank
-	Zero       rank
+	Reverse    Rank
+	NinetyNine Rank
+	MinusTen   Rank
+	Zero       Rank
 }
 
 // NNGameSettings holds the relevant settings for a game of 99.
@@ -54,7 +54,7 @@ type GameManager interface {
 	NewGame()
 	StartGame(humans []*NNPlayer, robots int, settings *NNGameSettings)
 	Deal()
-	Play(p *Player, h hand)
+	Play(p *Player, h Hand)
 	EndGame()
 }
 
@@ -124,7 +124,6 @@ func (mgr *NNGameManager) StartGame(humans []*NNPlayer, robots int, settings *NN
 		}
 	}
 	// TODO: support AI (robot) players
-	mgr.dealer = new(dealer)
 	mgr.Deal()
 	mgr.round = 0
 	mgr.currPlayer = 0
@@ -146,7 +145,8 @@ func (mgr *NNGameManager) setSettings(settings *NNGameSettings) {
 func (mgr *NNGameManager) Deal() {
 	set := mgr.settings
 	decks := MinDecks(set.CardsPerPlayer, set.WildCards, len(mgr.players))
-	mgr.dealer.ReplaceShoe(decks)
+	mgr.dealer = NewDealer(decks, NewRng(), true)
+
 	for _, stat := range mgr.players {
 		hand := mgr.dealer.DealHand(set.CardsPerPlayer)
 		stat.player.ReplaceHand(hand)
@@ -165,7 +165,7 @@ func MinDecks(cardsEach int, wilds NNWildCards, numPlayers int) int {
 }
 
 // Play validates a player's move, scores their card, and advances play to the next player.
-func (mgr *NNGameManager) Play(p *NNPlayer, h hand) (err error) {
+func (mgr *NNGameManager) Play(p *NNPlayer, h Hand) (err error) {
 	if mgr.CurrPlayer().id != p.id {
 		return errors.New("playing out of turn")
 	} else if c, ok := mgr.getCardFromPlayer(p, h[0]); !ok {
@@ -192,7 +192,7 @@ func (mgr *NNGameManager) Play(p *NNPlayer, h hand) (err error) {
 
 // GetCardFromPlayer removes a Card from a player's hand, if it exists.
 // It returns true and the Card if it exists, else false and an empty Card.
-func (mgr *NNGameManager) getCardFromPlayer(p *NNPlayer, c card) (card, bool) {
+func (mgr *NNGameManager) getCardFromPlayer(p *NNPlayer, c Card) (Card, bool) {
 	if v, ok := mgr.players[p.id]; ok {
 		for i, card := range v.player.hand {
 			if card == c {
@@ -201,7 +201,7 @@ func (mgr *NNGameManager) getCardFromPlayer(p *NNPlayer, c card) (card, bool) {
 			}
 		}
 	}
-	return card{}, false
+	return Card{}, false
 }
 
 // DeclareLoser announces the loser of the round and ends the game.
@@ -213,7 +213,7 @@ func (mgr *NNGameManager) DeclareLoser(p *NNPlayer) {
 }
 
 // ScoreCard determines the effect of the card on the count.
-func (mgr NNGameManager) ScoreCard(c card) (toAdd int, err error) {
+func (mgr NNGameManager) ScoreCard(c Card) (toAdd int, err error) {
 	toAdd, err = mgr.ScoreRank(c.rank)
 	mgr.reverseIfNeeded(c)
 	return
@@ -223,7 +223,7 @@ func (mgr NNGameManager) ScoreCard(c card) (toAdd int, err error) {
 // Assumes count-altering wild cards (Zero, NinetyNine, MinusTen), are all different ranks,
 // as one Rank card cannot have multiple competing effects on the Count.
 // Assumes Reverse has no impact on the count, unless it also happens to be a wild card.
-func (mgr *NNGameManager) ScoreRank(r rank) (toAdd int, err error) {
+func (mgr *NNGameManager) ScoreRank(r Rank) (toAdd int, err error) {
 	set := mgr.settings
 	wilds := set.WildCards
 	switch r {
@@ -244,7 +244,7 @@ func (mgr *NNGameManager) ScoreRank(r rank) (toAdd int, err error) {
 }
 
 // ReverseIfNeeded reverses the direction of play if a Reverse card is played.
-func (mgr *NNGameManager) reverseIfNeeded(c card) {
+func (mgr *NNGameManager) reverseIfNeeded(c Card) {
 	if c.rank == mgr.settings.WildCards.Reverse {
 		mgr.direction *= -1
 	}

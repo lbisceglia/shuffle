@@ -1,14 +1,16 @@
-package models
+package cards
 
-import "shuffle/utils"
+import (
+	"shuffle/utils"
+)
 
-// Dealer is an interface for entities that perform actions on Shoes.
+// A Dealer perform actions on Shoes.
 // Actions include reording Cards, adding Cards to, and removing Cards from Shoes.
 type Dealer interface {
 	ReplaceShoe(numDecks int)
 	Shuffle()
-	DealHand(size int)
-	HandleDiscard(cards []card)
+	DealHand(size int) Hand
+	HandleDiscard(cards []Card)
 }
 
 // dealer is an implementation of Dealer.
@@ -17,13 +19,15 @@ type Dealer interface {
 // the discard pile and draw from it.
 type dealer struct {
 	drawIdx int
-	draw    shoe
-	discard shoe
+	rand    Randomizer
+	draw    Shoe
+	discard Shoe
 }
 
 // NewDealer constructs a new dealer with the given number of decks, shuffled by default.
-func NewDealer(numDecks int, shuffle ...bool) *dealer {
+func NewDealer(numDecks int, rng Randomizer, shuffle ...bool) *dealer {
 	d := new(dealer)
+	d.rand = rng
 	d.replaceShoe(numDecks)
 	if len(shuffle) == 0 || shuffle[0] {
 		d.Shuffle()
@@ -33,17 +37,17 @@ func NewDealer(numDecks int, shuffle ...bool) *dealer {
 
 // Shuffle randomly shuffles the draw pile.
 func (d *dealer) Shuffle() {
-	d.draw.shuffle()
+	d.rand.Shuffle(d.draw)
 	d.drawIdx = 0
 }
 
 // DealHand deals a number of Cards off the top of the draw pile.
 // If the draw pile is exhausted during a deal, the Dealer will automatically reshuffle
 // the discard pile and draw from it.
-func (d *dealer) DealHand(size int) hand {
+func (d *dealer) DealHand(size int) Hand {
 	// Calculate the size of the hand
 	sz := utils.Min(size, d.drawSize()+d.discardSize())
-	hand := make(hand, sz)
+	hand := make(Hand, sz)
 	if sz > 0 {
 		end := utils.Min(len(d.draw), d.drawIdx+sz)
 		copied := copy(hand, d.draw[d.drawIdx:end])
@@ -53,9 +57,6 @@ func (d *dealer) DealHand(size int) hand {
 		}
 		if copied < sz {
 			copy(hand[copied:], d.DealHand(sz-copied))
-		}
-		if d.drawEmpty() {
-			d.reshuffle()
 		}
 	}
 	return hand
@@ -68,7 +69,7 @@ func (d *dealer) reshuffle() {
 }
 
 // HandleDiscard adds the given cards to the discard pile.
-func (d *dealer) HandleDiscard(cards []card) {
+func (d *dealer) HandleDiscard(cards []Card) {
 	d.discard = append(d.discard, cards...)
 }
 
@@ -98,27 +99,4 @@ func (d dealer) discardSize() int {
 // drawEmpty returns true if the draw pile is empty, false otherwise.
 func (d dealer) drawEmpty() bool {
 	return len(d.draw) == d.drawIdx
-}
-
-// Debugging Helper Methods
-
-// DrawPile returns the remaining cards in the Dealer's draw pile.
-func (d dealer) drawPile() shoe {
-	return d.draw[d.drawIdx:]
-}
-
-// RevealDeck prints out the remaining cards in the Dealer's draw pile.
-func (d dealer) revealDeck() {
-	revealPile("Draw", d.drawPile())
-}
-
-// RevealDiscard print out the remaining cards in the Dealer's discard pile.
-func (d dealer) revealDiscard() {
-	revealPile("Discard", d.discard)
-}
-
-// revealDecks print out the remaining cards in the Dealer's draw and discard piles, respectively.
-func (d dealer) revealDecks() {
-	d.revealDeck()
-	d.revealDiscard()
 }

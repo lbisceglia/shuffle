@@ -24,7 +24,7 @@ func TestAbs(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			Evaluate(t, Abs(test.x), test.want)
+			Error(t, Abs(test.x), test.want)
 		})
 	}
 }
@@ -32,7 +32,7 @@ func TestAbs(t *testing.T) {
 func testBinaryOp(t *testing.T, tests map[string]IntBinaryOpResult, f func(int, int) int) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			Evaluate(t, f(test.x, test.y), test.want)
+			Error(t, f(test.x, test.y), test.want)
 		})
 	}
 }
